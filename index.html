@@ -36,8 +36,12 @@
     transform-origin:center;will-change:transform,opacity;letter-spacing:.005em;}
 
   /* work spectrum */
-  .darkfill{position:absolute;inset:0;z-index:4;background:#0e1110;opacity:0;will-change:opacity;}
-  .spectrum{position:absolute;inset:0;z-index:5;pointer-events:none;}
+  .darkfill{position:absolute;inset:0;z-index:4;background:#0e1110;opacity:0;}
+  /* a single letter that flies to the camera until its ink fills the frame and becomes the canvas */
+  .flyletter{position:absolute;left:0;top:0;z-index:5;color:#0e1110;
+    font-family:var(--font-display);font-weight:800;line-height:1;font-stretch:125%;
+    transform-origin:50% 50%;opacity:0;pointer-events:none;will-change:transform,opacity;}
+  .spectrum{position:absolute;inset:0;z-index:6;pointer-events:none;}
   .tile{position:absolute;left:0;top:0;will-change:transform,opacity;opacity:0;}
   .tile-inner{width:100%;height:100%;border-radius:9px;overflow:hidden;
     background:var(--offwhite-2);transform:scale(1);
@@ -94,6 +98,7 @@
   <div class="stage" id="stage">
     <div class="words" id="words"></div>
     <div class="darkfill" id="darkfill"></div>
+    <div class="flyletter" id="flyletter">S</div>
     <div class="spectrum" id="spectrum"></div>
     <div class="scrollcue" id="scrollcue"></div>
 
@@ -210,19 +215,21 @@ function layout(){
   M.zoomX=M.coX; M.zoomY=M.coY;   // zoom toward camera from the composition centre
 
   // ---- spectrum arch ----
+  // desktop: a wide, shallow arch — big radius + small span so cards spread far
+  // (overflowing both edges to imply volume of work) without overlapping.
   let R;
   if(mobile){ M.archSpan=120; M.cardW=clamp(W*0.24,76,150); R=Math.max(W*0.52,H*0.14); }
-  else      { M.archSpan=104; M.cardW=clamp(Math.min(W,H)*0.15,118,230); R=Math.max(W*0.45,H*0.58); }
+  else      { M.archSpan=62;  M.cardW=clamp(Math.min(W,H)*0.15,120,240); R=Math.max(W*1.12,H*1.35); }
   M.cardH=M.cardW/0.73; M.archR=R; M.archPivotX=W/2;
   const Amax=M.archSpan/2*PI/180;
   const spanH=R*(1-Math.cos(Amax));
   const gap=mobile? H*0.025 : H*0.03;
-  const archWidth=2*R*Math.sin(Amax)+M.cardW;     // full horizontal span of the fan
+  const archWidth=2*R*Math.sin(Amax)+M.cardW;     // full horizontal span of the fan (incl. off-screen)
 
   // text block width: desktop = 50% of the arch span; mobile = default
   if(endwrap){
     if(mobile){ endwrap.style.width=''; endwrap.style.maxWidth=''; }
-    else { const cw=Math.round(archWidth*0.5); endwrap.style.width=cw+'px'; endwrap.style.maxWidth=cw+'px'; }
+    else { const cw=Math.round(Math.min(archWidth*0.5, W*0.62)); endwrap.style.width=cw+'px'; endwrap.style.maxWidth=cw+'px'; }
   }
   const he=Math.max(endwrap?endwrap.getBoundingClientRect().height:0, H*0.16);
 
@@ -231,8 +238,8 @@ function layout(){
     const groupH=spanH + M.cardH + gap + he;
     const mTop=Math.max(H*0.05,(H-groupH)/2);
     topCardCenter=mTop + M.cardH/2;
-  } else {                                        // desktop: arch sits lower than the top edge
-    topCardCenter=H*0.20 + M.cardH/2;
+  } else {                                        // desktop: apex cards near the top
+    topCardCenter=H*0.075 + M.cardH/2;
   }
   M.archPivotY=topCardCenter + R;
   const archBottom=(M.archPivotY - R*Math.cos(Amax)) + M.cardH/2;
@@ -248,13 +255,19 @@ function layout(){
   // ---- copy placement ----
   let endCenter;
   if(mobile){
-    endCenter=archBottom + gap + he/2;                 // sits just under the arch
+    endCenter=archBottom + gap + he/2;                       // sits just under the arch
   } else {
-    const openingTop=topCardCenter + M.cardH/2;        // bottom edge of the top-centre cards
-    endCenter=openingTop + he/2 + H*0.018;             // nest the copy inside the arch's negative space
-    endCenter=Math.min(endCenter, H - he/2 - H*0.03);  // keep the paragraph fully on-screen
+    const apexBottom=topCardCenter + M.cardH/2;              // bottom of the top-centre cards
+    const clearance=Math.max(100, H*0.13);                  // ≥100px breathing room above the eyebrow
+    endCenter=apexBottom + clearance + he/2;
+    endCenter=Math.min(endCenter, H - he/2 - H*0.03);        // keep the paragraph fully on-screen
   }
   if(endwrap) endwrap.style.top=endCenter+'px';
+
+  // fly-through letter sits at the composition centre, sized like a glyph in the scene
+  const fly=document.getElementById('flyletter');
+  if(fly){ fly.style.fontSize=(artW*0.2)+'px'; }
+
   const beatTop = mobile ? endCenter : H*0.80;
   beatEls.forEach(b=> b.style.top=beatTop+'px');
 }
@@ -294,13 +307,18 @@ function render(p){
     w.el.style.opacity=(w.shade*clamp(a*1.9)).toFixed(3);
     w.el.style.transform=`translate(${x.toFixed(1)}px,${y.toFixed(1)}px) translate(-50%,-50%) rotate(${w.ang.toFixed(1)}deg) scale(${Math.max(.02,sc).toFixed(3)})`;
   }
-  // zoom INTO the densest ink so the black floods the screen
+  // the whole illustration rushes toward the camera...
   wordsEl.style.transformOrigin=`${M.zoomX.toFixed(1)}px ${M.zoomY.toFixed(1)}px`;
-  wordsEl.style.transform = zoomT>0 ? `scale(${(1+zoomT*zoomT*13).toFixed(3)})` : 'none';
-  const darkT=smooth(clamp((p-0.835)/0.05));
-  darkfill.style.opacity=darkT.toFixed(3);
-  band.style.opacity=(1-darkT).toFixed(3);
-  credit.style.color = darkT>0.5 ? 'rgba(242,239,232,.5)' : 'rgba(70,70,60,.45)';
+  wordsEl.style.transform = zoomT>0 ? `scale(${(1+zoomT*zoomT*6).toFixed(3)})` : 'none';
+  // ...and one letter flies all the way to the lens until its ink fills the frame (becomes the canvas)
+  const Zl = 1 + Math.pow(zoomT,2.3)*150;
+  flyletter.style.opacity = clamp(zoomT*6).toFixed(3);
+  flyletter.style.transform = `translate(${M.coX.toFixed(1)}px,${M.coY.toFixed(1)}px) translate(-50%,-50%) scale(${Zl.toFixed(2)})`;
+  // dark canvas + inverse UI snap in only once the letter already covers the screen (no visible fade)
+  const dark = p>=0.872;
+  darkfill.style.opacity = dark?'1':'0';
+  band.style.opacity = p>=0.86 ? '0':'1';
+  credit.style.color = dark ? 'rgba(242,239,232,.5)' : 'rgba(70,70,60,.45)';
 
   const mid=(WORK.length-1)/2;
   for(const t of tiles){
