@@ -37,10 +37,11 @@
 
   /* work spectrum */
   .darkfill{position:absolute;inset:0;z-index:4;background:#0e1110;opacity:0;}
-  /* a single letter that flies to the camera until its ink fills the frame and becomes the canvas */
-  .flyletter{position:absolute;left:0;top:0;z-index:5;color:#0e1110;
-    font-family:var(--font-display);font-weight:800;line-height:1;font-stretch:125%;
-    transform-origin:50% 50%;opacity:0;pointer-events:none;will-change:transform,opacity;}
+  /* an existing glyph from the eye, rendered as SVG so it stays razor-sharp as it flies to the
+     camera; its own ink scales up until it becomes the canvas for the work section */
+  .flysvg{position:absolute;inset:0;width:100%;height:100%;z-index:5;overflow:visible;
+    opacity:0;pointer-events:none;will-change:opacity;}
+  .flysvg text{fill:#0e1110;font-family:var(--font-display);font-weight:800;font-stretch:125%;}
   .spectrum{position:absolute;inset:0;z-index:6;pointer-events:none;}
   .tile{position:absolute;left:0;top:0;will-change:transform,opacity;opacity:0;}
   .tile-inner{width:100%;height:100%;border-radius:9px;overflow:hidden;
@@ -98,7 +99,7 @@
   <div class="stage" id="stage">
     <div class="words" id="words"></div>
     <div class="darkfill" id="darkfill"></div>
-    <div class="flyletter" id="flyletter">S</div>
+    <svg class="flysvg" id="flysvg" aria-hidden="true"><g id="flyg"><text id="flyglyph" text-anchor="middle" dominant-baseline="central">0</text></g></svg>
     <div class="spectrum" id="spectrum"></div>
     <div class="scrollcue" id="scrollcue"></div>
 
@@ -136,8 +137,6 @@ function op(p,a,b,c,d){ if(p<a)return 0; if(p<b)return smooth((p-a)/(b-a));
 function pw(p,a){for(let i=1;i<a.length;i++){if(p<=a[i][0]){
   const t=(p-a[i-1][0])/((a[i][0]-a[i-1][0])||1);return lerp(a[i-1][1],a[i][1],clamp(t));}}
   return a[a.length-1][1];}
-const KF_EYES=[[0,0],[0.07,0],[0.105,0.12],[0.205,0.40],[0.248,0.45],[0.325,0.45],
-  [0.362,0.58],[0.440,0.58],[0.477,0.72],[0.555,0.72],[0.615,1],[1,1]];
 const KF_ZOOM=[[0,0],[0.80,0],[0.875,1],[1,1]];
 const KF_BLOOM=[[0,0],[0.82,0],[0.95,1],[1,1]];
 
@@ -212,7 +211,6 @@ function layout(){
     w.ey=clamp(w.ty+(Math.random()-0.5)*H*0.30, H*0.05, eyesCY+artH*0.55);
   });
   M.coX=W/2; M.coY=eyesCY;
-  M.zoomX=M.coX; M.zoomY=M.coY;   // zoom toward camera from the composition centre
 
   // ---- spectrum arch ----
   // desktop: a wide, shallow arch — big radius + small span so cards spread far
@@ -264,9 +262,10 @@ function layout(){
   }
   if(endwrap) endwrap.style.top=endCenter+'px';
 
-  // fly-through letter sits at the composition centre, sized like a glyph in the scene
-  const fly=document.getElementById('flyletter');
-  if(fly){ fly.style.fontSize=(artW*0.2)+'px'; }
+  // hero glyph: a real letter at the centre of the RIGHT eye that later flies to the camera
+  M.heroX = ox + 0.785*artW; M.heroY = oy + 0.45*artH;
+  const glyph=document.getElementById('flyglyph');
+  if(glyph){ glyph.setAttribute('font-size',100); glyph.setAttribute('x',24); glyph.setAttribute('y',0); }
 
   const beatTop = mobile ? endCenter : H*0.80;
   beatEls.forEach(b=> b.style.top=beatTop+'px');
@@ -276,6 +275,8 @@ addEventListener('resize',layout); layout();
 /* ---------- elements ---------- */
 const progress=document.getElementById('progress');
 const darkfill=document.getElementById('darkfill');
+const flysvg=document.getElementById('flysvg');
+const flyg=document.getElementById('flyg');
 const band=document.querySelector('.band');
 const credit=document.querySelector('.credit');
 const scrollcue=document.getElementById('scrollcue');
@@ -296,7 +297,7 @@ function render(p){
   progress.style.width=(p*100).toFixed(2)+'%';
   scrollcue.style.opacity=(1-ease(p,0.005,0.04)).toFixed(3);
 
-  const eyesT=pw(p,KF_EYES);
+  const eyesT=smooth(clamp((p-0.06)/0.68));   // eyes assemble continuously — never pause with the copy
   const zoomT=smooth(pw(p,KF_ZOOM));
   const bloomT=smooth(pw(p,KF_BLOOM));
 
@@ -307,15 +308,16 @@ function render(p){
     w.el.style.opacity=(w.shade*clamp(a*1.9)).toFixed(3);
     w.el.style.transform=`translate(${x.toFixed(1)}px,${y.toFixed(1)}px) translate(-50%,-50%) rotate(${w.ang.toFixed(1)}deg) scale(${Math.max(.02,sc).toFixed(3)})`;
   }
-  // the whole illustration rushes toward the camera...
-  wordsEl.style.transformOrigin=`${M.zoomX.toFixed(1)}px ${M.zoomY.toFixed(1)}px`;
-  wordsEl.style.transform = zoomT>0 ? `scale(${(1+zoomT*zoomT*6).toFixed(3)})` : 'none';
-  // ...and one letter flies all the way to the lens until its ink fills the frame (becomes the canvas)
-  const Zl = 1 + Math.pow(zoomT,2.3)*150;
-  flyletter.style.opacity = clamp(zoomT*6).toFixed(3);
-  flyletter.style.transform = `translate(${M.coX.toFixed(1)}px,${M.coY.toFixed(1)}px) translate(-50%,-50%) scale(${Zl.toFixed(2)})`;
-  // dark canvas + inverse UI snap in only once the letter already covers the screen (no visible fade)
-  const dark = p>=0.872;
+  // the illustration itself stays crisp (no raster zoom)...
+  wordsEl.style.transform='none';
+  // ...one real letter from the right eye flies to the lens. It's SVG, so scaling its vector
+  // geometry keeps it razor-sharp, and its own ink grows until it IS the background.
+  const inkX=lerp(M.heroX, innerWidth/2, zoomT), inkY=lerp(M.heroY, innerHeight/2, zoomT);
+  const Z=0.16 + Math.pow(zoomT,3)*280;
+  flyg.setAttribute('transform',`translate(${inkX.toFixed(1)} ${inkY.toFixed(1)}) scale(${Z.toFixed(3)})`);
+  flysvg.style.opacity = clamp((p-0.74)/0.045).toFixed(3);   // the glyph is already present in the eye
+  // dark canvas only backs the letter once it has already covered the screen (no white→black switch)
+  const dark = p>=0.873;
   darkfill.style.opacity = dark?'1':'0';
   band.style.opacity = p>=0.86 ? '0':'1';
   credit.style.color = dark ? 'rgba(242,239,232,.5)' : 'rgba(70,70,60,.45)';
