@@ -1,0 +1,616 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Steadfast — From Black & White to a Spectrum</title>
+<meta name="description" content="A scroll-driven story: clinical ophthalmology data transforms into a kaleidoscope of creative work." />
+
+<!-- Attempt brand webfonts; gracefully falls back if unreachable. -->
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Google+Sans+Code:wght@300;400;500;600;700&display=swap" rel="stylesheet" />
+
+<style>
+  :root{
+    /* Brand */
+    --offwhite: #F2EFE8;
+    --offwhite-2: #ECE8DF;
+    --ink: #14140F;
+    --ink-soft: #3a3a32;
+    --paper: #FBFAF6;
+    --line: #1a1a14;
+
+    /* Spectrum (kaleidoscope) */
+    --h1: 4;    /* coral   */
+    --h2: 28;   /* orange  */
+    --h3: 45;   /* gold    */
+    --h4: 158;  /* emerald */
+    --h5: 188;  /* teal    */
+    --h6: 222;  /* indigo  */
+    --h7: 282;  /* violet  */
+    --h8: 326;  /* magenta */
+
+    /* Type — primary = Zolando Sans Extended (headlines), secondary = Google Sans Flex (body) */
+    --font-display: "Zolando Sans Extended","Zolando Sans","Google Sans Flex",
+                    ui-sans-serif, "Helvetica Neue", Arial, sans-serif;
+    --font-body: "Google Sans Flex","Google Sans","Google Sans Code",
+                 ui-sans-serif, system-ui, "Helvetica Neue", Arial, sans-serif;
+  }
+
+  *{ box-sizing:border-box; margin:0; padding:0; }
+
+  html{ scroll-behavior:auto; }
+  body{
+    background:var(--offwhite);
+    color:var(--ink);
+    font-family:var(--font-body);
+    -webkit-font-smoothing:antialiased;
+    text-rendering:optimizeLegibility;
+    overflow-x:hidden;
+  }
+
+  /* ---------- Scroll architecture ---------- */
+  .scroll-track{ height:680vh; position:relative; }
+  .stage{
+    position:sticky; top:0;
+    height:100vh; width:100%;
+    overflow:hidden;
+    background:var(--offwhite);
+  }
+
+  /* Off-white that warms subtly as color arrives */
+  .stage::before{
+    content:""; position:absolute; inset:0;
+    background:
+      radial-gradient(120% 120% at 50% 50%, rgba(255,255,255,0.6), rgba(0,0,0,0) 60%),
+      var(--offwhite);
+    z-index:0;
+  }
+
+  /* ---------- Clinical graph-paper backdrop ---------- */
+  .graphpaper{
+    position:absolute; inset:-10%;
+    z-index:1;
+    opacity:0;
+    background-image:
+      linear-gradient(rgba(20,20,15,0.07) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(20,20,15,0.07) 1px, transparent 1px),
+      linear-gradient(rgba(20,20,15,0.13) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(20,20,15,0.13) 1px, transparent 1px);
+    background-size: 22px 22px, 22px 22px, 110px 110px, 110px 110px;
+    will-change:opacity;
+  }
+
+  /* ---------- Color glow behind kaleidoscope ---------- */
+  .colorglow{
+    position:absolute; inset:0; z-index:2; opacity:0;
+    background:
+      radial-gradient(60% 60% at 50% 48%,
+        hsla(45,90%,72%,0.55),
+        hsla(322,80%,68%,0.28) 45%,
+        rgba(0,0,0,0) 72%);
+    will-change:opacity;
+  }
+
+  /* ---------- Chart field (the onslaught) ---------- */
+  .charts{ position:absolute; inset:0; z-index:3; }
+  .card{
+    position:absolute;
+    background:var(--paper);
+    border:1.25px solid var(--line);
+    box-shadow:3px 4px 0 rgba(20,20,15,0.16);
+    opacity:0;
+    transform:translate(-50%,-50%) scale(.6);
+    will-change:transform,opacity;
+    overflow:hidden;
+  }
+  .card .cap{
+    font-family:var(--font-body);
+    font-size:8.5px; letter-spacing:.12em; text-transform:uppercase;
+    color:var(--ink); padding:5px 7px 3px;
+    border-bottom:1px solid rgba(20,20,15,.5);
+    display:flex; justify-content:space-between; gap:6px;
+    font-weight:600;
+  }
+  .card .cap .n{ opacity:.5; font-weight:500; }
+  .card svg{ display:block; width:100%; height:auto; }
+  .card.snellen{ display:flex; align-items:center; justify-content:center; }
+
+  /* ---------- Kaleidoscope ---------- */
+  .kaleido{
+    position:absolute; left:50%; top:50%; z-index:4;
+    width:128vmin; height:128vmin;
+    transform:translate(-50%,-50%) scale(.18);
+    opacity:0;
+    will-change:transform,opacity;
+  }
+  .kaleido-clip{
+    position:absolute; inset:0;
+    border-radius:50%;
+    overflow:hidden;
+    box-shadow:
+      0 30px 90px rgba(20,20,15,0.30),
+      inset 0 0 0 2px rgba(255,255,255,0.35);
+  }
+  .kaleido-spin{
+    position:absolute; inset:0;
+    animation:spin 64s linear infinite;
+    transform-origin:50% 50%;
+  }
+  @keyframes spin{ to{ transform:rotate(360deg); } }
+
+  .seg{
+    position:absolute; inset:0;
+    clip-path:polygon(50% 50%, -11.2% -97.8%, 111.2% -97.8%);
+    transform-origin:50% 50%;
+  }
+  .tile{
+    position:absolute;
+    border-radius:14% / 12%;
+    transform:translate(-50%,-50%);
+    box-shadow:
+      inset 0 0 0 1.5px rgba(255,255,255,0.30),
+      inset 0 14px 26px rgba(255,255,255,0.30),
+      inset 0 -16px 26px rgba(0,0,0,0.20);
+    overflow:hidden;
+  }
+  .tile::after{ /* a little medium-glyph for richness */
+    content:""; position:absolute; left:50%; top:50%;
+    width:34%; height:34%; transform:translate(-50%,-50%);
+    border-radius:50%;
+    background:rgba(255,255,255,0.22);
+    box-shadow:inset 0 0 0 2px rgba(255,255,255,0.3);
+  }
+  .tile.sq::after{ border-radius:6%; }
+  .tile.tri::after{
+    border-radius:0; background:none;
+    box-shadow:none;
+    width:0;height:0;
+    border-left:14% solid transparent;
+    border-right:14% solid transparent;
+    border-bottom:24% solid rgba(255,255,255,0.22);
+    transform:translate(-50%,-40%);
+  }
+  .tile .lab{
+    position:absolute; left:8%; bottom:7%;
+    font-family:var(--font-body); font-weight:600;
+    font-size:1.05vmin; letter-spacing:.05em; text-transform:uppercase;
+    color:rgba(255,255,255,0.92);
+    text-shadow:0 1px 2px rgba(0,0,0,.35);
+  }
+
+  /* Center medallion */
+  .kaleido-core{
+    position:absolute; left:50%; top:50%;
+    width:11vmin; height:11vmin; transform:translate(-50%,-50%);
+    border-radius:50%;
+    background:radial-gradient(circle at 38% 32%, #fff, var(--offwhite-2));
+    box-shadow:0 8px 26px rgba(20,20,15,.35), inset 0 0 0 1.5px rgba(20,20,15,.12);
+    display:flex; align-items:center; justify-content:center;
+    z-index:5;
+  }
+  .kaleido-core span{
+    font-family:var(--font-display); font-weight:800;
+    font-size:5.2vmin; color:var(--ink);
+    letter-spacing:-.02em;
+  }
+
+  /* Outer dashed ring */
+  .kaleido-ring{
+    position:absolute; inset:-3.4%;
+    border-radius:50%;
+    border:1.5px dashed rgba(20,20,15,.28);
+    animation:spin 120s linear infinite reverse;
+  }
+
+  /* ---------- Copy layers ---------- */
+  .copy{
+    position:absolute; z-index:8; left:50%; transform:translateX(-50%);
+    width:min(92vw, 880px); text-align:center; pointer-events:none;
+    opacity:0; will-change:opacity,transform;
+  }
+  .copy .eyebrow{
+    font-family:var(--font-body); font-weight:600;
+    font-size:clamp(11px,1.1vw,14px); letter-spacing:.32em; text-transform:uppercase;
+    color:var(--ink-soft); margin-bottom:18px;
+  }
+  .copy h1,.copy h2{
+    font-family:var(--font-display); font-weight:800;
+    line-height:1.02; letter-spacing:-.01em;
+    /* emulate "extended" width if the real face is unavailable */
+    font-stretch:125%;
+  }
+  .copy h1{ font-size:clamp(34px,6.4vw,86px); }
+  .copy h2{ font-size:clamp(26px,4.4vw,58px); }
+  .copy p.sub{
+    font-family:var(--font-body); font-weight:400;
+    font-size:clamp(15px,1.7vw,22px); line-height:1.5;
+    color:var(--ink-soft); margin-top:22px; max-width:36ch; margin-inline:auto;
+  }
+  .copy .accentword{
+    background:linear-gradient(92deg,
+      hsl(var(--h1),80%,52%), hsl(var(--h3),85%,50%),
+      hsl(var(--h4),70%,44%), hsl(var(--h6),72%,54%), hsl(var(--h8),75%,55%));
+    -webkit-background-clip:text; background-clip:text; color:transparent;
+  }
+
+  .copy.intro{ top:50%; transform:translate(-50%,-50%); }
+  .copy.mid{ top:50%; transform:translate(-50%,-50%); }
+  .copy.end{
+    bottom:7vh; top:auto; transform:translateX(-50%);
+  }
+  .copy.end .panel{
+    display:inline-block; padding:26px 38px; border-radius:18px;
+    background:rgba(250,248,242,0.90);
+    backdrop-filter:blur(10px); -webkit-backdrop-filter:blur(10px);
+    box-shadow:0 22px 70px rgba(20,20,15,.22), inset 0 0 0 1px rgba(20,20,15,.06);
+  }
+
+  /* ---------- Scroll hint & progress ---------- */
+  .hint{
+    position:absolute; left:50%; bottom:5vh; transform:translateX(-50%);
+    z-index:9; font-family:var(--font-body); font-size:12px;
+    letter-spacing:.28em; text-transform:uppercase; color:var(--ink-soft);
+    display:flex; flex-direction:column; align-items:center; gap:10px;
+    will-change:opacity;
+  }
+  .hint .mouse{
+    width:22px; height:34px; border:1.5px solid var(--ink-soft); border-radius:12px;
+    position:relative;
+  }
+  .hint .mouse::after{
+    content:""; position:absolute; left:50%; top:7px; width:3px; height:7px;
+    background:var(--ink-soft); border-radius:2px; transform:translateX(-50%);
+    animation:wheel 1.6s ease-in-out infinite;
+  }
+  @keyframes wheel{ 0%{opacity:0;transform:translate(-50%,0)} 40%{opacity:1} 100%{opacity:0;transform:translate(-50%,10px)} }
+
+  .progress{
+    position:fixed; left:0; top:0; height:3px; width:0%;
+    z-index:50;
+    background:linear-gradient(90deg,
+      hsl(var(--h1),80%,55%), hsl(var(--h3),85%,52%), hsl(var(--h4),70%,46%),
+      hsl(var(--h6),72%,56%), hsl(var(--h8),78%,58%));
+    transition:width .08s linear;
+  }
+
+  .credit{
+    position:fixed; right:14px; bottom:12px; z-index:50;
+    font-family:var(--font-body); font-size:10px; letter-spacing:.18em;
+    text-transform:uppercase; color:var(--ink-soft); opacity:.5;
+  }
+
+  @media (prefers-reduced-motion: reduce){
+    .kaleido-spin, .kaleido-ring{ animation:none; }
+    .hint .mouse::after{ animation:none; }
+  }
+</style>
+</head>
+<body>
+
+<div class="progress" id="progress"></div>
+
+<div class="scroll-track">
+  <div class="stage" id="stage">
+    <div class="graphpaper" id="graphpaper"></div>
+    <div class="colorglow" id="colorglow"></div>
+
+    <div class="charts" id="charts"></div>
+
+    <div class="kaleido" id="kaleido">
+      <div class="kaleido-ring"></div>
+      <div class="kaleido-clip">
+        <div class="kaleido-spin" id="spin"></div>
+      </div>
+      <div class="kaleido-core"><span>S</span></div>
+    </div>
+
+    <!-- Copy -->
+    <div class="copy intro" id="c-intro">
+      <div class="eyebrow">Steadfast</div>
+      <h1>Science begins in<br>black&nbsp;&amp;&nbsp;white.</h1>
+      <p class="sub">Keep scrolling.</p>
+    </div>
+
+    <div class="copy mid" id="c-mid">
+      <h2>Data alone can overwhelm.</h2>
+      <p class="sub">Charts. Numbers. Findings. The truth is in there — but who can see it?</p>
+    </div>
+
+    <div class="copy end" id="c-end">
+      <div class="panel">
+        <div class="eyebrow">The Steadfast difference</div>
+        <h2>Creativity gives complexity<br><span class="accentword">color, shape &amp; a story.</span></h2>
+        <p class="sub">We turn rigorous science into visual storytelling across a spectrum of mediums — carrying your vision forward to a wider audience.</p>
+      </div>
+    </div>
+
+    <div class="hint" id="hint">
+      <div class="mouse"></div>
+      <div>scroll to begin</div>
+    </div>
+  </div>
+</div>
+
+<div class="credit">Steadfast · Visual Storytelling</div>
+
+<script>
+/* ============================================================
+   Steadfast scroll story — engine
+   ============================================================ */
+const clamp = (v,a=0,b=1)=>Math.min(b,Math.max(a,v));
+const lerp  = (a,b,t)=>a+(b-a)*t;
+const smooth= t=>t*t*(3-2*t);
+const range = (p,a,b)=>clamp((p-a)/(b-a));
+const ease  = (p,a,b)=>smooth(range(p,a,b));
+
+/* ---------- Procedural ophthalmology charts (monochrome) ---------- */
+const INK = '#14140f';
+function rnd(a,b){ return a+Math.random()*(b-a); }
+
+function lineChart(){ // OCT-like layered cross sections
+  let s='';
+  for(let k=0;k<4;k++){
+    let d=`M0 ${30+k*9}`, y=30+k*9;
+    for(let x=6;x<=100;x+=6){
+      y += rnd(-5,5);
+      const yy = clamp(y, 8+k*8, 64) ;
+      d+=` L${x} ${yy.toFixed(1)}`;
+    }
+    s+=`<path d="${d}" fill="none" stroke="${INK}" stroke-width="${k===0?1.6:1}" opacity="${1-k*0.18}"/>`;
+  }
+  return `<svg viewBox="0 0 100 70">${s}</svg>`;
+}
+function barChart(){
+  let s=''; const n=9;
+  for(let i=0;i<n;i++){
+    const h=rnd(10,52), x=6+i*10;
+    s+=`<rect x="${x}" y="${64-h}" width="7" height="${h}" fill="${i%2?'none':INK}" stroke="${INK}" stroke-width="1"/>`;
+  }
+  return `<svg viewBox="0 0 100 70"><line x1="3" y1="64" x2="97" y2="64" stroke="${INK}" stroke-width="1"/>${s}</svg>`;
+}
+function scatter(){
+  let s='';
+  for(let i=0;i<26;i++){
+    const x=rnd(6,94), y=rnd(8,60), r=rnd(1.2,2.6);
+    s+=`<circle cx="${x.toFixed(1)}" cy="${y.toFixed(1)}" r="${r.toFixed(1)}" fill="none" stroke="${INK}" stroke-width="1"/>`;
+  }
+  s+=`<line x1="6" y1="60" x2="94" y2="14" stroke="${INK}" stroke-width="1" stroke-dasharray="3 3"/>`;
+  return `<svg viewBox="0 0 100 70"><line x1="6" y1="64" x2="6" y2="6" stroke="${INK}" stroke-width="1"/><line x1="6" y1="64" x2="96" y2="64" stroke="${INK}" stroke-width="1"/>${s}</svg>`;
+}
+function visualField(){ // Humphrey 24-2 grayscale grid
+  let s=''; const cols=8, rows=6, cell=11;
+  for(let r=0;r<rows;r++)for(let c=0;c<cols;c++){
+    const cx=8+c*cell, cy=6+r*cell;
+    const dx=(c-3.5)/3.5, dy=(r-2.5)/2.5;
+    const dist=Math.sqrt(dx*dx+dy*dy);
+    const dark=clamp(1-dist*0.7+rnd(-0.18,0.18));
+    const g=Math.round(20+(1-dark)*210);
+    s+=`<rect x="${cx}" y="${cy}" width="9.5" height="9.5" fill="rgb(${g},${g},${g})" stroke="${INK}" stroke-width="0.4"/>`;
+  }
+  return `<svg viewBox="0 0 100 70">${s}</svg>`;
+}
+function dataTable(){
+  let s=''; const rows=6;
+  for(let r=0;r<rows;r++){
+    const y=6+r*9.5;
+    s+=`<line x1="3" y1="${y}" x2="97" y2="${y}" stroke="${INK}" stroke-width="${r===0?1.3:0.6}"/>`;
+    for(let c=0;c<4;c++){
+      const x=8+c*23;
+      const w=rnd(8,18);
+      s+=`<rect x="${x}" y="${y+2.6}" width="${w}" height="2.4" fill="${INK}" opacity="${r===0?0.9:0.55}"/>`;
+    }
+  }
+  [3,28,51,74,97].forEach(x=>{ s+=`<line x1="${x}" y1="6" x2="${x}" y2="63" stroke="${INK}" stroke-width="0.5"/>`; });
+  return `<svg viewBox="0 0 100 70">${s}</svg>`;
+}
+function iopWave(){ // intraocular pressure waveform
+  let d='M0 40', y=40;
+  for(let x=4;x<=100;x+=4){ y=40+Math.sin(x/7)*rnd(8,16)+rnd(-3,3); d+=` L${x} ${clamp(y,8,62).toFixed(1)}`; }
+  return `<svg viewBox="0 0 100 70"><path d="${d}" fill="none" stroke="${INK}" stroke-width="1.4"/><path d="${d} L100 70 L0 70 Z" fill="${INK}" opacity="0.08"/></svg>`;
+}
+function donut(){
+  const cx=50,cy=35,r=24; let s=''; let a=-90;
+  const segs=[35,25,22,18];
+  segs.forEach((v,i)=>{
+    const a2=a+v/100*360;
+    const x1=cx+r*Math.cos(a*Math.PI/180), y1=cy+r*Math.sin(a*Math.PI/180);
+    const x2=cx+r*Math.cos(a2*Math.PI/180), y2=cy+r*Math.sin(a2*Math.PI/180);
+    const large=(a2-a)>180?1:0;
+    s+=`<path d="M${cx} ${cy} L${x1.toFixed(1)} ${y1.toFixed(1)} A${r} ${r} 0 ${large} 1 ${x2.toFixed(1)} ${y2.toFixed(1)} Z" fill="${i%2?INK:'none'}" stroke="${INK}" stroke-width="1" opacity="${i%2?0.85-i*0.12:1}"/>`;
+    a=a2;
+  });
+  s+=`<circle cx="${cx}" cy="${cy}" r="11" fill="${'#FBFAF6'}" stroke="${INK}" stroke-width="1"/>`;
+  return `<svg viewBox="0 0 100 70">${s}</svg>`;
+}
+function snellen(){
+  const lines=[['E',26],['F P',18],['T O Z',13],['L P E D',9.5],['P E C F D',7]];
+  let s=''; let y=14;
+  lines.forEach(([t,fs])=>{ s+=`<text x="50" y="${y}" font-family="Georgia,serif" font-weight="700" font-size="${fs}" text-anchor="middle" fill="${INK}" letter-spacing="2">${t}</text>`; y+=fs*0.95+4; });
+  return `<svg viewBox="0 0 100 70">${s}</svg>`;
+}
+
+const GENERATORS = [
+  {fn:lineChart,  label:'OCT', unit:'µm'},
+  {fn:visualField,label:'Visual Field', unit:'24-2'},
+  {fn:scatter,    label:'Va · logMAR', unit:'n=240'},
+  {fn:barChart,   label:'Pachymetry', unit:'µm'},
+  {fn:iopWave,    label:'IOP', unit:'mmHg'},
+  {fn:dataTable,  label:'Cohort', unit:'tbl'},
+  {fn:donut,      label:'Etiology', unit:'%'},
+  {fn:snellen,    label:'Acuity', unit:'20/20'},
+  {fn:lineChart,  label:'ERG', unit:'µV'},
+  {fn:scatter,    label:'Axial Length', unit:'mm'},
+];
+
+/* ---------- Build the chart field ---------- */
+const chartsEl = document.getElementById('charts');
+const NUM = 30;
+const cards = [];
+
+// loose jittered grid so the screen genuinely fills up
+function buildCards(){
+  chartsEl.innerHTML=''; cards.length=0;
+  const cols=6, rows=5;
+  let i=0;
+  for(let r=0;r<rows;r++){
+    for(let c=0;c<cols;c++){
+      if(i>=NUM) break;
+      const g = GENERATORS[i % GENERATORS.length];
+      const baseX = (c+0.5)/cols*100 + rnd(-6,6);
+      const baseY = (r+0.5)/rows*100 + rnd(-7,7);
+      const w = rnd(150,210);
+      const rot = rnd(-9,9);
+      const el = document.createElement('div');
+      el.className='card'+(g.label==='Acuity'?' snellen':'');
+      el.style.width=w+'px';
+      el.innerHTML = `<div class="cap"><span>${g.label}</span><span class="n">${g.unit}</span></div>${g.fn()}`;
+      chartsEl.appendChild(el);
+      cards.push({
+        el,
+        x:clamp(baseX,8,92), y:clamp(baseY,10,90),
+        rot,
+        appear: 0.075 + (i/NUM)*0.26,        // staggered flood
+        depth: rnd(0.85,1.15),
+        jit: rnd(0,Math.PI*2),
+      });
+      i++;
+    }
+  }
+}
+buildCards();
+
+/* ---------- Build the kaleidoscope ---------- */
+const SEGMENTS = 8;
+const PALETTE = [4,28,45,158,188,222,282,326];
+const MEDIA = ['Brand','Print','Motion','Web','Illustration','Data Viz','Editorial','Identity'];
+const TILE_LAYOUT = [
+  {w:13,h:17, cx:50, cy:30, hue:0, shape:''},
+  {w:9, h:12, cx:43, cy:20, hue:4, shape:'sq'},
+  {w:8, h:10, cx:57, cy:21, hue:2, shape:'tri'},
+  {w:15,h:10, cx:50, cy:13.5, hue:6, shape:''},
+  {w:7, h:9,  cx:45.5, cy:39, hue:3, shape:'sq'},
+  {w:7, h:9,  cx:55, cy:38, hue:7, shape:''},
+  {w:6, h:7,  cx:50, cy:44, hue:5, shape:'tri'},
+];
+function tileBg(hue){
+  const h=PALETTE[hue%PALETTE.length];
+  const h2=PALETTE[(hue+1)%PALETTE.length];
+  return `linear-gradient(140deg, hsl(${h},72%,62%), hsl(${h2},78%,50%))`;
+}
+function buildKaleido(){
+  const spin = document.getElementById('spin');
+  spin.innerHTML='';
+  for(let s=0;s<SEGMENTS;s++){
+    const seg=document.createElement('div');
+    seg.className='seg';
+    const mirror = s%2 ? ' scaleX(-1)':'';
+    seg.style.transform = `rotate(${s*(360/SEGMENTS)}deg)${mirror}`;
+    TILE_LAYOUT.forEach((t,ti)=>{
+      const tile=document.createElement('div');
+      tile.className='tile'+(t.shape?(' '+t.shape):'');
+      tile.style.width=t.w+'vmin';
+      tile.style.height=t.h+'vmin';
+      tile.style.left=t.cx+'%';
+      tile.style.top=t.cy+'%';
+      tile.style.background=tileBg(t.hue);
+      if(s===0 && ti<MEDIA.length){ /* labels only need exist once visually; add to first seg tiles */ }
+      tile.innerHTML = `<span class="lab">${MEDIA[(t.hue)%MEDIA.length]}</span>`;
+      seg.appendChild(tile);
+    });
+    spin.appendChild(seg);
+  }
+}
+buildKaleido();
+
+/* ---------- Elements ---------- */
+const stage     = document.getElementById('stage');
+const graphpaper= document.getElementById('graphpaper');
+const colorglow = document.getElementById('colorglow');
+const kaleido   = document.getElementById('kaleido');
+const cIntro    = document.getElementById('c-intro');
+const cMid      = document.getElementById('c-mid');
+const cEnd      = document.getElementById('c-end');
+const hint      = document.getElementById('hint');
+const progress  = document.getElementById('progress');
+
+/* ---------- Scroll loop ---------- */
+let target=0, cur=0;
+function computeTarget(){
+  const max = document.documentElement.scrollHeight - window.innerHeight;
+  target = max>0 ? clamp(window.scrollY/max) : 0;
+}
+window.addEventListener('scroll', computeTarget, {passive:true});
+window.addEventListener('resize', ()=>{ computeTarget(); });
+computeTarget();
+
+function render(p){
+  progress.style.width = (p*100).toFixed(2)+'%';
+
+  /* graph paper: in during data, out before kaleidoscope */
+  graphpaper.style.opacity = (ease(p,0.07,0.20) * (1-ease(p,0.46,0.60)) * 0.9).toFixed(3);
+
+  /* charts flood, peak, then collapse to center & drain */
+  const collapse = ease(p,0.46,0.64);
+  for(let i=0;i<cards.length;i++){
+    const c=cards[i];
+    const a = ease(p, c.appear, c.appear+0.05);
+    // gentle nervous jitter near the overwhelming peak
+    const peak = ease(p,0.30,0.42)*(1-ease(p,0.42,0.52));
+    const jx = Math.sin(p*40+c.jit)*peak*0.8;
+    const jy = Math.cos(p*38+c.jit)*peak*0.8;
+    // collapse toward center
+    const x = lerp(c.x, 50, collapse) + jx;
+    const y = lerp(c.y, 50, collapse) + jy;
+    const sc = (lerp(0.6,1,a)*c.depth) * (1 - 0.78*collapse);
+    const op = a * (1-collapse);
+    c.el.style.left = x+'%';
+    c.el.style.top  = y+'%';
+    c.el.style.opacity = op.toFixed(3);
+    c.el.style.transform =
+      `translate(-50%,-50%) scale(${Math.max(0.02,sc).toFixed(3)}) rotate(${(c.rot*(1-collapse)+collapse*180).toFixed(1)}deg)`;
+  }
+
+  /* color glow blooms with the kaleidoscope */
+  colorglow.style.opacity = (ease(p,0.52,0.74)*0.95).toFixed(3);
+
+  /* kaleidoscope rises from center, expands, then lifts & eases back to make room for the closing line */
+  const kOp = ease(p,0.52,0.66);
+  const settle = ease(p,0.82,1.0);
+  const kScale = lerp(0.18, 1.0, ease(p,0.52,0.78)) * (1 - settle*0.20);
+  const kRot = p*40; // scroll adds a slow turn on top of the CSS spin
+  const kTy = -settle * window.innerHeight * 0.11; // lift up to clear the message
+  kaleido.style.opacity = kOp.toFixed(3);
+  kaleido.style.transform =
+    `translate(-50%, calc(-50% + ${kTy.toFixed(1)}px)) rotate(${kRot.toFixed(2)}deg) scale(${kScale.toFixed(3)})`;
+
+  /* copy */
+  cIntro.style.opacity = (ease(p,0.0,0.04) - ease(p,0.09,0.16)).toFixed(3);
+  const introLift = ease(p,0.09,0.18)*-30;
+  cIntro.style.transform = `translate(-50%,calc(-50% + ${introLift}px))`;
+
+  cMid.style.opacity = (ease(p,0.33,0.39) - ease(p,0.45,0.52)).toFixed(3);
+
+  cEnd.style.opacity = ease(p,0.84,0.93).toFixed(3);
+  const endLift = (1-ease(p,0.84,0.95))*28;
+  cEnd.style.transform = `translateX(-50%) translateY(${endLift}px)`;
+
+  /* hint fades on first scroll */
+  hint.style.opacity = (1-ease(p,0.01,0.05)).toFixed(3);
+}
+
+function loop(){
+  cur += (target-cur)*0.10;
+  if(Math.abs(target-cur)<0.0002) cur=target;
+  render(cur);
+  requestAnimationFrame(loop);
+}
+loop();
+
+/* rebuild scattered charts on big resizes so the field stays full */
+let rt;
+window.addEventListener('resize',()=>{ clearTimeout(rt); rt=setTimeout(()=>{ buildCards(); },300); });
+</script>
+</body>
+</html>
