@@ -24,7 +24,7 @@
     background:linear-gradient(90deg,#e0533b,#e6a93b,#2f9e6f,#3b78c9,#9b59c4,#c94f9b);
     transition:width .08s linear;}
 
-  .scroll-track{height:1000vh;position:relative;}
+  .scroll-track{height:2000vh;position:relative;}
   .stage{position:sticky;top:0;height:100vh;width:100%;overflow:hidden;background:var(--offwhite);}
   .stage::before{content:"";position:absolute;inset:0;z-index:0;
     background:radial-gradient(120% 100% at 50% 38%,rgba(255,255,255,.55),rgba(0,0,0,0) 60%),var(--offwhite);}
@@ -49,14 +49,12 @@
   .tile:hover{z-index:80!important;}
   .tile:hover .tile-inner{transform:scale(1.16);box-shadow:0 26px 64px rgba(20,20,15,.40);}
 
-  /* lower-third copy band — animation never enters here */
-  .band{position:absolute;left:0;right:0;bottom:0;height:36vh;z-index:8;
-    display:flex;align-items:center;justify-content:center;text-align:center;
-    padding:0 6vw 4vh;pointer-events:none;
-    background:linear-gradient(to top,var(--offwhite) 44%,rgba(242,239,232,.85) 72%,rgba(242,239,232,0) 100%);}
-  .slot{position:absolute;width:min(92vw,860px);left:50%;transform:translateX(-50%);}
+  /* lower copy — animation never enters here */
+  .band{position:absolute;left:0;right:0;bottom:0;height:46vh;z-index:7;pointer-events:none;
+    background:linear-gradient(to top,var(--offwhite) 48%,rgba(242,239,232,.85) 74%,rgba(242,239,232,0) 100%);}
+  .copy{position:absolute;inset:0;z-index:8;pointer-events:none;}
 
-  .beat{position:absolute;left:50%;top:50%;width:min(92vw,860px);
+  .beat{position:absolute;left:50%;top:80vh;width:min(92vw,860px);text-align:center;
     transform:translate(-50%,-50%);opacity:0;will-change:opacity,transform;}
   .beat .word-cue{font-family:var(--font-display);font-stretch:125%;font-weight:800;
     font-size:clamp(40px,7vw,92px);letter-spacing:-.01em;line-height:1;}
@@ -65,8 +63,8 @@
   .beat .hint{font-family:var(--font-body);font-weight:500;font-size:clamp(13px,1.4vw,18px);
     letter-spacing:.2em;text-transform:uppercase;color:var(--ink-soft);}
 
-  .endwrap{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);
-    width:min(92vw,820px);display:flex;flex-direction:column;align-items:center;gap:14px;}
+  .endwrap{position:absolute;left:50%;top:64vh;transform:translate(-50%,-50%);text-align:center;
+    width:min(92vw,820px);display:flex;flex-direction:column;align-items:center;gap:13px;}
   .endwrap .eyebrow{font-family:var(--font-body);font-weight:600;
     font-size:clamp(11px,1.15vw,14px);letter-spacing:.34em;text-transform:uppercase;
     color:var(--ink-soft);opacity:0;will-change:opacity,transform;}
@@ -101,8 +99,8 @@
     <div class="spectrum" id="spectrum"></div>
     <div class="scrollcue" id="scrollcue"></div>
 
-    <div class="band">
-      <div class="slot">
+    <div class="band"></div>
+    <div class="copy">
         <div class="beat" data-b="0"><div class="hint">Keep scrolling.</div></div>
         <div class="beat" data-b="1"><div class="phrase">Data alone creates complexity&hellip;</div></div>
         <div class="beat" data-b="2"><div class="word-cue">Charts.</div></div>
@@ -116,7 +114,6 @@
           <h1 id="e-head">Creativity gives complexity <span class="spec">a story.</span></h1>
           <p id="e-para">We turn rigorous science into visual storytelling across a spectrum of mediums, so you can carry your vision forward.</p>
         </div>
-      </div>
     </div>
   </div>
 </div>
