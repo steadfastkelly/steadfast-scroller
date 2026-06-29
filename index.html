@@ -163,6 +163,15 @@ EYEPTS.forEach((p,i)=>{
     shade:clamp(0.5+0.62*d)});
 });
 
+/* ---- depth-of-field tuning (tweak to taste) ----
+   scaleRange : how much fore/background glyphs grow/shrink   (0 = flat)
+   foreFrac   : fraction of glyphs that float toward the viewer
+   backFade   : how much receding glyphs dim                  (0 = no fade)
+   sharp/soft : |depth| thresholds where blur tier 1 / tier 2 kick in
+   blur1/blur2: the two blur radii in px (kept tiny & few for performance)     */
+const DEPTH={ scaleRange:0.26, foreFrac:0.12, backFade:0.42,
+              sharp:0.50, soft:0.78, blur1:0.7, blur2:1.4 };
+
 const SVGNS='http://www.w3.org/2000/svg';
 const wordsEl=document.getElementById('words');
 wordsData.forEach((w,i)=>{
@@ -176,6 +185,15 @@ wordsData.forEach((w,i)=>{
   // apart organically as we dive in (rather than expanding in rigid lockstep)
   const ja=Math.random()*PI*2;
   w.jx=Math.cos(ja); w.jy=Math.sin(ja); w.jmag=0.5+Math.random(); w.spin=(Math.random()*2-1)*120;
+  // ---- assign a depth plane ----
+  // dark, structural marks sit on the focal plane (sharp, full size); faint marks recede
+  // (smaller, dimmer, softer); a small stable subset floats forward (larger, airy, faintly soft).
+  const hsh=(i*0.61803)%1;
+  w.z = hsh<DEPTH.foreFrac ? 0.5+(DEPTH.foreFrac-hsh)/DEPTH.foreFrac*0.5 : -(1-w.d);
+  w.depthScale = 1 + w.z*DEPTH.scaleRange;
+  w.depthOpa   = w.z<0 ? (1-DEPTH.backFade)+DEPTH.backFade*(1+w.z) : 0.9;
+  const def=Math.abs(w.z);                                 // distance from the focal plane
+  w.blurCss = def<DEPTH.sharp ? 'none' : (def<DEPTH.soft ? 'blur('+DEPTH.blur1+'px)' : 'blur('+DEPTH.blur2+'px)');
   wordsEl.appendChild(t);
 });
 
@@ -214,7 +232,7 @@ function layout(){
   const cell=artW*(9/878);
   wordsData.forEach(w=>{
     w.tx=ox+w.nx*artW; w.ty=oy+w.ny*artH;
-    w.fpx=cell*(0.92+0.6*w.d); w.el.setAttribute('font-size',w.fpx.toFixed(2));
+    w.fpx=cell*(0.92+0.6*w.d); w.el.setAttribute('font-size',(w.fpx*w.depthScale).toFixed(2));
     const fromLeft=w.tx<W/2;
     w.ex=fromLeft? -W*0.05-Math.random()*W*0.12 : W*1.05+Math.random()*W*0.12;
     w.ey=clamp(w.ty+(Math.random()-0.5)*H*0.30, H*0.05, eyesCY+artH*0.55);
@@ -307,6 +325,11 @@ function render(p,dt){
 
   const eyesT=smooth(clamp((p-0.06)/0.68));   // eyes assemble continuously — never pause with the copy
   const zoomT=smooth(pw(p,KF_ZOOM));
+  // depth blur is a static, per-plane filter — on while the eye assembles/rests, dropped during
+  // the dive (a blur on a 180x-scaled glyph would smear). Toggled only on the zoom transition,
+  // never per-frame, so hundreds of filtered glyphs stay cheap.
+  const wantBlur = zoomT===0;
+  if(wantBlur!==M.blurOn){ M.blurOn=wantBlur; for(const w of wordsData) w.el.style.filter = wantBlur ? w.blurCss : 'none'; }
   // the fan holds for half a second after the letter has filled the frame, then sweeps in
   // (time-gated, not scroll-gated, so the pause is a real beat regardless of scroll speed)
   if(zoomT>=0.98) M.hold=(M.hold||0)+(dt||0); else M.hold=0;
@@ -333,7 +356,7 @@ function render(p,dt){
       y = ocy + dyh*Z + w.jy*w.jmag*edge*scat*200;
       sc = sc*Z; rot = w.ang + w.spin*scat;
     }
-    w.el.setAttribute('opacity',(w.shade*clamp(a*1.9)).toFixed(3));
+    w.el.setAttribute('opacity',(w.shade*w.depthOpa*clamp(a*1.9)).toFixed(3));
     w.el.setAttribute('transform',`translate(${x.toFixed(1)},${y.toFixed(1)}) rotate(${rot.toFixed(1)}) scale(${Math.max(.02,sc).toFixed(3)})`);
   }
   // No off-white→black wash: the dark letter filling the frame IS the background. A solid canvas
