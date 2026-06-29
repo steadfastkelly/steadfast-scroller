@@ -11,3 +11,7 @@ scratch-artifact.html
 # local screenshot/test scaffolding
 _shot.js
 _arttest.js
+
+# macOS archive cruft
+__MACOSX/
+ref/__MACOSX/

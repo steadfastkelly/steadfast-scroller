@@ -53,10 +53,16 @@ the spectrum.
 
 ## Technical notes
 
-- **Zero dependencies, one file.** The eyes are a procedural engraving: each structure
-  (brow hatching, lid lines, lashes, limbal rings, iris radials, pupil, tear trough) is
-  generated mathematically and rendered as ~900 tiny word/data-point spans (auto-reduced on
-  small screens). The spectrum is a transform-driven arch of the work thumbnails.
+- **Zero dependencies, one file.** The eyes are true word-art sampled from the engraving
+  reference (`ref/eyes-reference.jpg`): `ref/gen.py` reads the image, grids it, and emits a
+  point per dark cell with its darkness and local hatch angle (`ref/eyepts.json`, ~1000
+  points, baked inline as `EYEPTS`). Each point becomes a tiny clinical token whose size,
+  weight and opacity track the darkness and whose rotation follows the engraving's lines, so
+  the words reproduce the actual illustration (highlights stay blank). Auto-reduced on small
+  screens. The spectrum is a transform-driven arch of the work thumbnails.
+- **Regenerating the eyes:** drop a new reference at `ref/eyes-reference.jpg`, run
+  `python3 ref/gen.py` (needs `numpy`, `Pillow`), then re-inject `eyepts.json` into the
+  `EYEPTS` array in `index.html`.
 - **Hover:** once the spectrum is fanned out, hovering a work card zooms it in with a subtle
   spring ease and raises it above its neighbours (pointer events are only enabled after the
   bloom). Cards carry a soft drop shadow and no border.
