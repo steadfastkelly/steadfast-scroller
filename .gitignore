@@ -2,5 +2,12 @@ node_modules/
 package.json
 package-lock.json
 
-# Derived body-level copy of index.html for the Claude Artifact preview
+# raw source archive from the client (optimized copies live in assets/work/)
+assets_src/
+
+# derived body-level copy of index.html for the Claude Artifact preview
 scratch-artifact.html
+
+# local screenshot/test scaffolding
+_shot.js
+_arttest.js
