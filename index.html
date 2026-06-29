@@ -30,10 +30,11 @@
     background:radial-gradient(120% 100% at 50% 38%,rgba(255,255,255,.55),rgba(0,0,0,0) 60%),var(--offwhite);}
 
 
-  .words{position:absolute;inset:0;z-index:3;}
-  .word{position:absolute;left:0;top:0;white-space:nowrap;
-    font-family:var(--font-body);color:var(--ink);
-    transform-origin:center;will-change:transform,opacity;letter-spacing:.005em;}
+  /* the word-field is SVG so every glyph stays razor-sharp vector geometry even when a single
+     letter is scaled up to fill the screen during the final dive */
+  .words{position:absolute;inset:0;width:100%;height:100%;z-index:3;overflow:visible;}
+  .words text{font-family:var(--font-body);fill:var(--ink);letter-spacing:.005em;
+    will-change:transform,opacity;}
 
   /* work spectrum */
   .darkfill{position:absolute;inset:0;z-index:4;background:#0e1110;opacity:0;}
@@ -92,7 +93,7 @@
 
 <div class="scroll-track">
   <div class="stage" id="stage">
-    <div class="words" id="words"></div>
+    <svg class="words" id="words" aria-hidden="true"></svg>
     <div class="darkfill" id="darkfill"></div>
     <div class="spectrum" id="spectrum"></div>
     <div class="scrollcue" id="scrollcue"></div>
@@ -156,12 +157,20 @@ EYEPTS.forEach((p,i)=>{
     shade:clamp(0.5+0.62*d)});
 });
 
+const SVGNS='http://www.w3.org/2000/svg';
 const wordsEl=document.getElementById('words');
 wordsData.forEach((w,i)=>{
-  const s=document.createElement('span');
-  s.className='word'; s.textContent=tok(); s.style.fontWeight=w.weight;
-  w.el=s; w.delay=((i*0.61803)%1)*0.5; w.span=0.42;
-  wordsEl.appendChild(s);
+  const t=document.createElementNS(SVGNS,'text');
+  t.setAttribute('text-anchor','middle');
+  t.setAttribute('dominant-baseline','central');
+  t.setAttribute('font-weight',w.weight);
+  t.textContent=tok();
+  w.el=t; w.delay=((i*0.61803)%1)*0.5; w.span=0.42;
+  // per-letter scatter: random drift direction, magnitude and spin so the cluster breaks
+  // apart organically as we dive in (rather than expanding in rigid lockstep)
+  const ja=Math.random()*PI*2;
+  w.jx=Math.cos(ja); w.jy=Math.sin(ja); w.jmag=0.5+Math.random(); w.spin=(Math.random()*2-1)*120;
+  wordsEl.appendChild(t);
 });
 
 
@@ -199,12 +208,12 @@ function layout(){
   const cell=artW*(9/878);
   wordsData.forEach(w=>{
     w.tx=ox+w.nx*artW; w.ty=oy+w.ny*artH;
-    w.fpx=cell*(0.92+0.6*w.d); w.el.style.fontSize=w.fpx.toFixed(2)+'px';
+    w.fpx=cell*(0.92+0.6*w.d); w.el.setAttribute('font-size',w.fpx.toFixed(2));
     const fromLeft=w.tx<W/2;
     w.ex=fromLeft? -W*0.05-Math.random()*W*0.12 : W*1.05+Math.random()*W*0.12;
     w.ey=clamp(w.ty+(Math.random()-0.5)*H*0.30, H*0.05, eyesCY+artH*0.55);
   });
-  M.coX=W/2; M.coY=eyesCY;
+  M.coX=W/2; M.coY=eyesCY; M.scatterRef=artW*0.16;
 
   // ---- spectrum arch ----
   // desktop: a wide, shallow arch — big radius + small span so cards spread far
@@ -292,26 +301,27 @@ function render(p){
   const zoomT=smooth(pw(p,KF_ZOOM));
   const bloomT=smooth(pw(p,KF_BLOOM));
 
+  // The whole word-field dives toward the anchor letter at the centre of the right eye. Every
+  // glyph is SVG, so scaling stays razor-sharp; as we dive, the cluster scatters apart (outer
+  // letters fling away while the central one swells to fill the frame).
+  const Z=1+Math.pow(zoomT,3)*120;            // uniform dive magnitude
+  const scat=Math.pow(zoomT,2);               // how far the cluster has broken apart
   for(const w of wordsData){
     const a=smooth(clamp((eyesT-w.delay)/w.span));
-    const x=lerp(w.ex,w.tx,a), y=lerp(w.ey,w.ty,a);
-    const sc=lerp(0.7,1,a);
-    w.el.style.opacity=(w.shade*clamp(a*1.9)).toFixed(3);
-    w.el.style.transform=`translate(${x.toFixed(1)}px,${y.toFixed(1)}px) translate(-50%,-50%) rotate(${w.ang.toFixed(1)}deg) scale(${Math.max(.02,sc).toFixed(3)})`;
-  }
-  // the entire engraved illustration zooms uniformly toward the lens, anchored on the centre of
-  // the right eye, until one of its own letters swells to fill the frame. No separate glyph —
-  // we fly straight *into* the illustration's ink.
-  if(zoomT>0){
-    const wz=1+Math.pow(zoomT,3)*120;
-    wordsEl.style.transformOrigin=`${M.heroX.toFixed(1)}px ${M.heroY.toFixed(1)}px`;
-    wordsEl.style.transform=`scale(${wz.toFixed(3)})`;
-  } else {
-    wordsEl.style.transform='none';
+    let x=lerp(w.ex,w.tx,a), y=lerp(w.ey,w.ty,a), sc=lerp(0.7,1,a), rot=w.ang;
+    if(zoomT>0){
+      const dxh=w.tx-M.heroX, dyh=w.ty-M.heroY;
+      const edge=clamp(Math.hypot(dxh,dyh)/M.scatterRef);   // central letters barely scatter
+      x = M.heroX + dxh*Z + w.jx*w.jmag*edge*scat*260;
+      y = M.heroY + dyh*Z + w.jy*w.jmag*edge*scat*260;
+      sc = sc*Z; rot = w.ang + w.spin*scat;
+    }
+    w.el.setAttribute('opacity',(w.shade*clamp(a*1.9)).toFixed(3));
+    w.el.setAttribute('transform',`translate(${x.toFixed(1)},${y.toFixed(1)}) rotate(${rot.toFixed(1)}) scale(${Math.max(.02,sc).toFixed(3)})`);
   }
   // the solid dark canvas fades up beneath the swelling letter so it lands as a clean full-bleed
   // background — no cream ever shows through the glyph's negative space.
-  const darkT=smooth(clamp((zoomT-0.45)/0.45));
+  const darkT=smooth(clamp((zoomT-0.50)/0.42));
   darkfill.style.opacity=darkT.toFixed(3);
   const dark = darkT>0.5;
   // the off-white gradient is fully cleared before the zoom takes over, so nothing veils the frame
