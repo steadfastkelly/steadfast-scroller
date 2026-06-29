@@ -308,8 +308,18 @@ function render(p){
     w.el.style.opacity=(w.shade*clamp(a*1.9)).toFixed(3);
     w.el.style.transform=`translate(${x.toFixed(1)}px,${y.toFixed(1)}px) translate(-50%,-50%) rotate(${w.ang.toFixed(1)}deg) scale(${Math.max(.02,sc).toFixed(3)})`;
   }
-  // the illustration itself stays crisp (no raster zoom)...
-  wordsEl.style.transform='none';
+  // the whole engraved illustration — every letter and character — rushes toward the lens in
+  // concert with the hero glyph: scale the entire word-field up from the hero point (where the
+  // O sits) and dissolve it into the camera, so the O is what remains to fill the screen.
+  if(zoomT>0){
+    const wz=1+Math.pow(zoomT,3)*22;
+    wordsEl.style.transformOrigin=`${M.heroX.toFixed(1)}px ${M.heroY.toFixed(1)}px`;
+    wordsEl.style.transform=`scale(${wz.toFixed(3)})`;
+    wordsEl.style.opacity=(1-smooth(clamp((zoomT-0.10)/0.62))).toFixed(3);
+  } else {
+    wordsEl.style.transform='none';
+    wordsEl.style.opacity='1';
+  }
   // ...one real letter from the right eye flies to the lens. It's SVG, so scaling its vector
   // geometry keeps it razor-sharp, and its own ink grows until it IS the background.
   const inkX=lerp(M.heroX, innerWidth/2, zoomT), inkY=lerp(M.heroY, innerHeight/2, zoomT);
@@ -319,7 +329,9 @@ function render(p){
   // dark canvas only backs the letter once it has already covered the screen (no white→black switch)
   const dark = p>=0.873;
   darkfill.style.opacity = dark?'1':'0';
-  band.style.opacity = p>=0.86 ? '0':'1';
+  // the off-white gradient at the bottom clears out as the zoom begins, so nothing veils the
+  // O as it fills the screen
+  band.style.opacity = (1-smooth(clamp((p-0.80)/0.06))).toFixed(3);
   credit.style.color = dark ? 'rgba(242,239,232,.5)' : 'rgba(70,70,60,.45)';
 
   const mid=(WORK.length-1)/2;
