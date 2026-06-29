@@ -85,6 +85,12 @@
   .credit{position:fixed;right:14px;bottom:11px;z-index:60;font-family:var(--font-body);
     font-size:10px;letter-spacing:.18em;text-transform:uppercase;color:var(--ink-soft);opacity:.45;}
 
+  @media (max-width:760px){
+    .endwrap .eyebrow{font-size:13px;letter-spacing:.28em;}
+    .endwrap h1{font-size:clamp(34px,8.8vw,50px);}
+    .endwrap p{font-size:clamp(16px,4.4vw,20px);line-height:1.55;}
+  }
+
   @media (prefers-reduced-motion: reduce){ .scrollcue::after{animation:none;} }
 </style>
 </head>
@@ -101,7 +107,7 @@
     <div class="band"></div>
     <div class="copy">
         <div class="beat" data-b="0"><div class="hint">Keep scrolling.</div></div>
-        <div class="beat" data-b="1"><div class="phrase">Data alone creates complexity&hellip;</div></div>
+        <div class="beat" data-b="1"><div class="phrase">Your data alone creates complexity&hellip;</div></div>
         <div class="beat" data-b="2"><div class="word-cue">Charts.</div></div>
         <div class="beat" data-b="3"><div class="word-cue">Numbers.</div></div>
         <div class="beat" data-b="4"><div class="word-cue">Findings.</div></div>
@@ -110,7 +116,7 @@
 
         <div class="endwrap" id="endwrap">
           <div class="eyebrow" id="e-eyebrow">The Steadfast Difference</div>
-          <h1 id="e-head">Creativity gives complexity <span class="spec">a story.</span></h1>
+          <h1 id="e-head">Creativity makes sense of <span class="spec">your science.</span></h1>
           <p id="e-para">We turn rigorous science into visual storytelling across a spectrum of mediums, so you can carry your vision forward.</p>
         </div>
     </div>
@@ -219,7 +225,7 @@ function layout(){
   // desktop: a wide, shallow arch — big radius + small span so cards spread far
   // (overflowing both edges to imply volume of work) without overlapping.
   let R;
-  if(mobile){ M.archSpan=164; M.cardW=clamp(W*0.22,72,138); R=Math.max(W*0.74,H*0.18); }
+  if(mobile){ M.archSpan=160; M.cardW=clamp(W*0.26,88,128); R=Math.max(W*1.5,H*0.5); }
   else      { M.archSpan=84;  M.cardW=clamp(Math.min(W,H)*0.15,120,240); R=Math.max(W*1.12,H*1.35); }
   M.mobile=mobile; M.archSpanRad=M.archSpan*PI/180;
   M.cardH=M.cardW/0.73; M.archR=R; M.archPivotX=W/2;
@@ -236,10 +242,8 @@ function layout(){
   const he=Math.max(endwrap?endwrap.getBoundingClientRect().height:0, H*0.16);
 
   let topCardCenter;
-  if(mobile){                                   // centre arch+text as a group in the middle third
-    const groupH=spanH + M.cardH + gap + he;
-    const mTop=Math.max(H*0.05,(H-groupH)/2);
-    topCardCenter=mTop + M.cardH/2;
+  if(mobile){                                   // gentle arc near the top; content centres below it
+    topCardCenter=H*0.13 + M.cardH/2;
   } else {                                        // desktop: apex cards near the top, nudged down 10vh
     topCardCenter=H*0.075 + M.cardH/2 + H*0.10;
   }
@@ -260,7 +264,7 @@ function layout(){
   // ---- copy placement ----
   let endCenter;
   if(mobile){
-    endCenter=archBottom + gap + he/2;                       // sits just under the arch
+    endCenter=H*0.5;                                         // content centred vertically in the viewport
   } else {
     const apexBottom=topCardCenter + M.cardH/2;              // bottom of the top-centre cards
     const clearance=Math.max(100, H*0.13);                  // ≥100px breathing room above the eyebrow
@@ -273,7 +277,7 @@ function layout(){
   // illustration's own letters swells until it fills the frame
   M.heroX = ox + 0.785*artW; M.heroY = oy + 0.45*artH;
 
-  const beatTop = mobile ? endCenter : H*0.80;
+  const beatTop = H*0.80;
   beatEls.forEach(b=> b.style.top=beatTop+'px');
 }
 addEventListener('resize',layout); layout();
@@ -349,7 +353,7 @@ function render(p,dt){
   if(wheel) spinPhase += (dt||0)*(M.mobile?0.05:0.038);   // rad/s — slow, linear, premium
   else if(bloomT<0.5) spinPhase=0;                        // reset when scrolled back up
 
-  const mid=(WORK.length-1)/2, span=M.archSpanRad, rotF=M.mobile?0.92:0.5;
+  const mid=(WORK.length-1)/2, span=M.archSpanRad, rotF=0.5;
   for(const t of tiles){
     const delay=(Math.abs(t.i-mid)/(mid+1))*0.20;
     const bt=smooth(clamp((bloomT-delay)/(1-0.20)));
