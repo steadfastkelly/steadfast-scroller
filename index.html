@@ -86,9 +86,9 @@
     font-size:10px;letter-spacing:.18em;text-transform:uppercase;color:var(--ink-soft);opacity:.45;}
 
   @media (max-width:760px){
-    .endwrap .eyebrow{font-size:13px;letter-spacing:.28em;}
-    .endwrap h1{font-size:clamp(34px,8.8vw,50px);}
-    .endwrap p{font-size:clamp(16px,4.4vw,20px);line-height:1.55;}
+    .endwrap .eyebrow{font-size:12px;letter-spacing:.28em;}
+    .endwrap h1{font-size:clamp(31px,7.9vw,45px);}
+    .endwrap p{font-size:clamp(14px,4vw,18px);line-height:1.55;}
   }
 
   @media (prefers-reduced-motion: reduce){ .scrollcue::after{animation:none;} }
@@ -116,7 +116,7 @@
 
         <div class="endwrap" id="endwrap">
           <div class="eyebrow" id="e-eyebrow">The Steadfast Difference</div>
-          <h1 id="e-head">Creativity makes sense of <span class="spec">your science.</span></h1>
+          <h1 id="e-head">Creative that makes sense of <span class="spec">your science.</span></h1>
           <p id="e-para">We turn rigorous science into visual storytelling across a spectrum of mediums, so you can carry your vision forward.</p>
         </div>
     </div>
@@ -254,7 +254,7 @@ function layout(){
 
   // text block width: desktop = 50% of the arch span; mobile = default
   if(endwrap){
-    if(mobile){ endwrap.style.width=''; endwrap.style.maxWidth=''; }
+    if(mobile){ const cw=Math.round(W*0.828); endwrap.style.width=cw+'px'; endwrap.style.maxWidth=cw+'px'; } // ~10% narrower than before
     else { const cw=Math.round(Math.min(archWidth*0.5, W*0.62, 700)); endwrap.style.width=cw+'px'; endwrap.style.maxWidth=cw+'px'; }
   }
   const he=Math.max(endwrap?endwrap.getBoundingClientRect().height:0, H*0.16);
@@ -282,7 +282,7 @@ function layout(){
   // ---- copy placement ----
   let endCenter;
   if(mobile){
-    endCenter=H*0.5;                                         // content centred vertically in the viewport
+    endCenter=H*0.6;                                         // centred, then nudged down ~10vh
   } else {
     const apexBottom=topCardCenter + M.cardH/2;              // bottom of the top-centre cards
     const clearance=Math.max(100, H*0.13);                  // ≥100px breathing room above the eyebrow
