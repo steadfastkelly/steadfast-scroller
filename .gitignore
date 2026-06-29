@@ -1,3 +1,6 @@
 node_modules/
 package.json
 package-lock.json
+
+# Derived body-level copy of index.html for the Claude Artifact preview
+scratch-artifact.html
