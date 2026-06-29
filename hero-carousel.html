@@ -1,0 +1,376 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Steadfast — Hero Carousel</title>
+<meta name="description" content="A slow, premium thumbnail wheel of Steadfast work — a curved arc that drifts counter-clockwise, independent of scroll." />
+<style>
+  :root{
+    --offwhite:#F2EFE8;
+    --offwhite-2:#ECE8DF;
+    --ink:#14140F;
+    --ink-soft:#46463c;
+    --font-display:"Zolando Sans Extended","Zolando Sans","Google Sans Flex",
+                   ui-sans-serif,"Helvetica Neue",Arial,sans-serif;
+    --font-body:"Google Sans Flex","Google Sans",ui-sans-serif,system-ui,
+                "Helvetica Neue",Arial,sans-serif;
+  }
+  *{box-sizing:border-box;margin:0;padding:0;}
+  body{background:var(--offwhite);color:var(--ink);font-family:var(--font-body);
+       -webkit-font-smoothing:antialiased;text-rendering:optimizeLegibility;}
+
+  /* ===================================================================
+     Hero carousel — all styles scoped under .hc-hero so the component can
+     be dropped into any page without leaking styles. Animation touches
+     only `transform` and `opacity`; nothing here triggers layout.
+     =================================================================== */
+  .hc-hero{
+    position:relative;
+    width:100%;
+    height:clamp(420px, 64vh, 760px);
+    overflow:hidden;                       /* clips the off-screen lower wheel */
+    background:
+      radial-gradient(120% 90% at 50% 28%,rgba(255,255,255,.6),rgba(0,0,0,0) 62%),
+      var(--offwhite);
+    isolation:isolate;                     /* own stacking context for z-index */
+    contain:layout paint;                  /* confine layout/paint to the hero */
+  }
+
+  /* The wheel: a single positioned layer. Tiles are placed around an
+     invisible circle whose centre sits far below the hero, so only the
+     upper arc shows. The wheel layer itself never transforms — each tile
+     carries its own transform, written directly from the rAF loop. */
+  .hc-wheel{position:absolute;inset:0;z-index:1;pointer-events:none;}
+
+  .hc-tile{
+    position:absolute;left:0;top:0;
+    transform:translate3d(-9999px,-9999px,0);   /* parked until first frame */
+    will-change:transform;                       /* promote ONLY the tiles */
+    pointer-events:auto;
+    opacity:0;                                   /* faded in by the loop */
+    z-index:var(--z, 100);                       /* depth set via variable so... */
+  }
+  /* The inner card holds the hover scale on its OWN transform, so the
+     wheel's per-frame transform (on .hc-tile) and the hover scale never
+     fight, and hover causes zero layout shift. */
+  .hc-card{
+    width:100%;height:100%;
+    border-radius:10px;overflow:hidden;
+    background:var(--offwhite-2);
+    box-shadow:0 14px 34px rgba(0,0,0,.42);
+    transform:scale(1) translateZ(0);
+    transition:transform .55s cubic-bezier(.2,.75,.2,1),
+               box-shadow .55s cubic-bezier(.2,.75,.2,1);
+  }
+  .hc-card picture,.hc-card img{display:block;width:100%;height:100%;}
+  .hc-card img{object-fit:cover;}
+
+  .hc-tile:hover{z-index:300;}              /* ...the :hover rule reliably wins over it */
+  .hc-tile:hover .hc-card{
+    transform:scale(1.10) translateZ(0);         /* hover = 110%, transform only */
+    box-shadow:0 26px 64px rgba(0,0,0,.55);
+  }
+
+  /* Headline copy sits in front of the wheel; the wheel arcs above it. */
+  .hc-copy{
+    position:absolute;left:50%;bottom:7%;z-index:50;
+    width:min(92vw,720px);transform:translateX(-50%);
+    text-align:center;pointer-events:none;
+  }
+  .hc-copy .eyebrow{font-family:var(--font-body);font-weight:600;
+    font-size:clamp(11px,1.15vw,14px);letter-spacing:.32em;text-transform:uppercase;
+    color:var(--ink-soft);}
+  .hc-copy h1{font-family:var(--font-display);font-stretch:125%;font-weight:800;
+    font-size:clamp(28px,4.6vw,56px);line-height:1.04;letter-spacing:-.012em;
+    margin-top:10px;text-wrap:balance;}
+  .hc-copy h1 .spec{background:linear-gradient(92deg,#126a56,#1f9a72,#168568);
+    -webkit-background-clip:text;background-clip:text;color:transparent;}
+
+  /* Reduced motion: the wheel is rendered once as a static arc (the loop
+     never starts). Belt-and-suspenders in case anything tries to animate. */
+  @media (prefers-reduced-motion: reduce){
+    .hc-tile,.hc-card{transition:none!important;}
+  }
+</style>
+</head>
+<body>
+
+<section class="hc-hero" id="hero" aria-label="Steadfast work showcase">
+  <div class="hc-wheel" id="wheel"></div>
+  <div class="hc-copy">
+    <div class="eyebrow">The Steadfast Difference</div>
+    <h1>Rigorous science, <span class="spec">a spectrum of stories.</span></h1>
+  </div>
+</section>
+
+<script>
+/* =====================================================================
+   Hero carousel — a reusable, dependency-free component.
+
+   The thumbnails are fixed to the rim of a large invisible wheel whose
+   centre is far below the hero, so only the upper arc is visible. The
+   wheel drifts counter-clockwise (apex moves right → left). A thumbnail
+   exiting on the far left travels the hidden lower arc and re-enters from
+   the far right — perfectly seamless, because the tiles are spaced evenly
+   around the full 360°, so the pattern leaving one edge matches the
+   pattern arriving at the other.
+
+   Performance contract:
+     • One rAF loop, time-based — NOT tied to scroll. No scroll listeners.
+     • Per frame we write only `transform` (translate3d + rotate) and
+       `opacity` to each tile — never width/left/top/margin/filter, so the
+       browser never relays out or repaints layout.
+     • No framework, no per-frame state objects — values are written
+       straight to each element's style.
+     • `will-change:transform` lives only on the ~12 tiles.
+   ===================================================================== */
+(function () {
+  "use strict";
+  const PI = Math.PI, DEG = 180 / PI;
+
+  /* ---- configuration: every visual knob lives here ------------------ */
+  const CONFIG = {
+    // Image source + semantic alt text + optional focal point (object-position).
+    // `name` maps to assets/work/optimized/<name>-<w>.{avif,webp,jpg}.
+    images: [
+      { name: "01-clarisbio", alt: "ClarisBio — Steadfast visual storytelling project" },
+      { name: "02-utzy",      alt: "Utzy — Steadfast visual storytelling project" },
+      { name: "03-alivecor",  alt: "AliveCor — Steadfast visual storytelling project" },
+      { name: "04-alvus",     alt: "Alvus — Steadfast visual storytelling project" },
+      { name: "05-kinnect",   alt: "Kinnect — Steadfast visual storytelling project" },
+      { name: "06-conformal", alt: "Conformal — Steadfast visual storytelling project" },
+      { name: "07-ultra-one", alt: "Ultra One — Steadfast visual storytelling project" },
+      { name: "08-qapel",     alt: "Qapel — Steadfast visual storytelling project" },
+      { name: "09-msi",       alt: "MSI — Steadfast visual storytelling project" },
+      { name: "10-apellis",   alt: "Apellis — Steadfast visual storytelling project" },
+      { name: "11-iheezo",    alt: "iHeezo — Steadfast visual storytelling project" },
+      { name: "12-biotrue",   alt: "BioTrue — Steadfast visual storytelling project" },
+    ],
+    assetBase: "assets/work/optimized",     // where build-images.mjs writes variants
+    srcWidths: [160, 240, 320, 460],        // available responsive widths (≤ source)
+    fallbackWidth: 460,                      // <img src> + intrinsic width
+    intrinsicW: 460, intrinsicH: 631,        // declared dimensions → zero layout shift
+    aspect: 460 / 631,                       // 0.729 — matches the source masters
+    // `sizes`: card ≈ 0.15·min(vw,vh) on desktop, 0.26·min on small screens,
+    // matched to the JS layout below so the browser never over-fetches.
+    sizes: "(max-width: 819px) 26vw, clamp(120px, min(15vw, 15vh), 240px)",
+
+    speed: 2.6,            // drift, degrees / second — slow + premium
+    direction: -1,         // -1 = counter-clockwise (apex drifts right → left)
+    rotationFactor: 0.92,  // how much each tile tilts with the rim (0 = upright, 1 = full radial)
+    hoverScale: 1.10,      // focused thumbnail scales to 110% (transform only)
+
+    // Responsive geometry. The 12 thumbnails ride an arc as a seamless
+    // conveyor: each is `pitch` degrees apart, and an item passing the
+    // far-left edge wraps a full N·pitch span back to the far right —
+    // entirely off-screen, so the loop has no visible seam. radiusFactor
+    // is a multiple of the hero WIDTH (governs how far the arch overflows
+    // the edges); apexInsetVH drops the apex below the top edge; pitch is
+    // the breathing room between thumbnails; visibleHalf/fadeBand bound the
+    // on-screen arc.
+    breakpoints: {
+      desktop: { maxW: Infinity, radiusFactor: 1.15, cardVMin: 0.15, cardMin: 120, cardMax: 240, apexInsetVH: 0.085, pitch: 11, visibleHalf: 32, fadeBand: 9 },
+      tablet:  { maxW: 1024,     radiusFactor: 1.20, cardVMin: 0.20, cardMin: 104, cardMax: 190, apexInsetVH: 0.075, pitch: 13, visibleHalf: 34, fadeBand: 9 },
+      mobile:  { maxW: 640,      radiusFactor: 1.25, cardVMin: 0.27, cardMin: 88,  cardMax: 150, apexInsetVH: 0.06,  pitch: 15, visibleHalf: 36, fadeBand: 9 },
+    },
+  };
+
+  const clamp = (v, a, b) => Math.min(b, Math.max(a, v));
+  const smooth = (t) => t * t * (3 - 2 * t);
+  // wrap an angle into the symmetric range [-span/2, span/2) — this is what
+  // makes the conveyor seamless: an item leaving one end re-enters the other.
+  const wrapSpan = (v, span) => {
+    const h = span / 2;
+    return ((((v + h) % span) + span) % span) - h;
+  };
+
+  const hero = document.getElementById("hero");
+  const wheel = document.getElementById("wheel");
+  const reduceMotion = matchMedia("(prefers-reduced-motion: reduce)");
+
+  /* ---- build the DOM: one <picture> per tile, built once ------------ */
+  const N = CONFIG.images.length;
+  const BP0 = CONFIG.breakpoints.desktop;   // used to estimate the opening arc
+  const tiles = CONFIG.images.map((img, i) => {
+    const tile = document.createElement("div");
+    tile.className = "hc-tile";
+
+    const card = document.createElement("div");
+    card.className = "hc-card";
+
+    const srcset = (ext) =>
+      CONFIG.srcWidths.map((w) => `${CONFIG.assetBase}/${img.name}-${w}.${ext} ${w}w`).join(", ");
+
+    const picture = document.createElement("picture");
+    const avif = document.createElement("source");
+    avif.type = "image/avif"; avif.srcset = srcset("avif"); avif.sizes = CONFIG.sizes;
+    const webp = document.createElement("source");
+    webp.type = "image/webp"; webp.srcset = srcset("webp"); webp.sizes = CONFIG.sizes;
+
+    const el = document.createElement("img");
+    el.width = CONFIG.intrinsicW;            // declared intrinsic size → no CLS
+    el.height = CONFIG.intrinsicH;
+    el.alt = img.alt;                        // semantic, per-image alt
+    el.decoding = "async";
+    el.sizes = CONFIG.sizes;
+    if (img.focal) el.style.objectPosition = img.focal;
+    // Priority must be set BEFORE src/srcset, or the browser may start the
+    // fetch first. Tiles inside the opening arc load eagerly at high
+    // priority (no blank hero); the rest defer until they rotate in.
+    const onArc = Math.abs(wrapSpan(i * BP0.pitch, N * BP0.pitch)) <= BP0.visibleHalf + BP0.fadeBand;
+    el.loading = onArc ? "eager" : "lazy";
+    el.fetchPriority = onArc ? "high" : "low";
+    el.srcset = srcset("jpg");
+    el.src = `${CONFIG.assetBase}/${img.name}-${CONFIG.fallbackWidth}.jpg`;
+
+    picture.append(avif, webp, el);
+    card.append(picture);
+    tile.append(card);
+    wheel.append(tile);
+
+    return { tile, card, img: el, i };
+  });
+
+  /* ---- layout: recomputed on resize, NOT per frame ------------------ */
+  let geo = null;
+  function pickBp(W) {
+    const b = CONFIG.breakpoints;
+    if (W <= b.mobile.maxW) return b.mobile;
+    if (W <= b.tablet.maxW) return b.tablet;
+    return b.desktop;
+  }
+  function layout() {
+    const W = hero.clientWidth, H = hero.clientHeight, vmin = Math.min(W, H);
+    const bp = pickBp(W);
+    const cardW = clamp(vmin * bp.cardVMin, bp.cardMin, bp.cardMax);
+    const cardH = cardW / CONFIG.aspect;
+    const R = W * bp.radiusFactor;                  // radius scales with width
+    const apexY = H * bp.apexInsetVH + cardH / 2;   // centre of the top (apex) card
+    geo = {
+      W, H, cardW, cardH, R,
+      cx: W / 2,
+      cy: apexY + R,                                // wheel centre, far below the hero
+      pitch: bp.pitch,
+      wrap: N * bp.pitch,                           // total conveyor span (off-screen wrap)
+      visibleHalf: bp.visibleHalf,
+      fadeBand: bp.fadeBand,
+    };
+    for (const t of tiles) {
+      t.tile.style.width = cardW + "px";
+      t.tile.style.height = cardH + "px";
+      // anchor each tile's transform origin to its own centre
+      t.tile.style.marginLeft = -cardW / 2 + "px";
+      t.tile.style.marginTop = -cardH / 2 + "px";
+    }
+    return geo;
+  }
+
+  /* ---- place a single tile for a given conveyor offset -------------- */
+  function place(t, wheelDeg) {
+    // each tile sits `pitch` degrees from the next; wrapping over the full
+    // conveyor span keeps the stream continuous and evenly spaced
+    const a = wrapSpan(t.i * geo.pitch + wheelDeg, geo.wrap);
+    const vh = geo.visibleHalf, fb = geo.fadeBand;
+    const absA = Math.abs(a);
+
+    // Cull anything well outside the visible upper arc: park it off-screen,
+    // skip the trig, leave opacity 0. Keeps only ~5–6 tiles live per frame.
+    if (absA > vh + fb) {
+      if (t.shown !== false) {
+        t.tile.style.opacity = "0";
+        t.tile.style.transform = "translate3d(-9999px,-9999px,0)";
+        t.shown = false;
+      }
+      return;
+    }
+    t.shown = true;
+
+    const rad = a / DEG;
+    const x = geo.cx + Math.sin(rad) * geo.R;
+    const y = geo.cy - Math.cos(rad) * geo.R;
+    const rot = a * CONFIG.rotationFactor;           // tile tilts with the rim
+    // fade across the outer `fadeBand` degrees so tiles never pop at the edges
+    const fade = absA <= vh - fb ? 1 : smooth(clamp((vh + fb - absA) / (2 * fb), 0, 1));
+    // depth: apex tiles sit above the ones sliding toward the edges
+    const z = 100 + Math.round(Math.cos(rad) * 60);
+
+    t.tile.style.transform =
+      `translate3d(${x.toFixed(2)}px, ${y.toFixed(2)}px, 0) rotate(${rot.toFixed(2)}deg)`;
+    t.tile.style.opacity = fade.toFixed(3);
+    // set depth via a CSS variable (not inline z-index) so the :hover rule
+    // can reliably lift the focused tile above its neighbours
+    if (t.z !== z) { t.tile.style.setProperty("--z", z); t.z = z; }
+  }
+
+  /* ---- prioritise the first visible thumbnails, lazy-load the rest --- */
+  function primeLoading(wheelDeg) {
+    const vh = geo.visibleHalf, fb = geo.fadeBand;
+    for (const t of tiles) {
+      const visible = Math.abs(wrapSpan(t.i * geo.pitch + wheelDeg, geo.wrap)) <= vh + fb;
+      t.img.loading = visible ? "eager" : "lazy";
+      t.img.fetchPriority = visible ? "high" : "low";
+    }
+    // Once the hero has painted, quietly promote the off-arc tiles so they
+    // are decoded before they rotate in — no blank cards, no initial cost.
+    const warm = () => { for (const t of tiles) t.img.loading = "eager"; };
+    if ("requestIdleCallback" in window) requestIdleCallback(warm, { timeout: 2500 });
+    else setTimeout(warm, 1800);
+  }
+
+  /* ---- main loop: time-based, transform-only, no React, no scroll ---- */
+  let wheelDeg = 0, last = 0, raf = 0;
+  function frame(now) {
+    if (!last) last = now;
+    const dt = (now - last) / 1000; last = now;
+    wheelDeg = (wheelDeg + CONFIG.direction * CONFIG.speed * dt) % 360;
+    for (const t of tiles) place(t, wheelDeg);
+    raf = requestAnimationFrame(frame);
+  }
+
+  function start() {
+    layout();
+    primeLoading(0);
+    if (reduceMotion.matches) {
+      // Static arc — render one centred frame, never start the loop.
+      for (const t of tiles) place(t, 0);
+      for (const t of tiles) t.img.loading = "eager";
+      return;
+    }
+    cancelAnimationFrame(raf); last = 0;
+    raf = requestAnimationFrame(frame);
+  }
+
+  // Recompute geometry on resize (debounced to the next frame); the loop
+  // keeps running with the new geometry — no teardown, no re-render.
+  let resizePending = false;
+  addEventListener("resize", () => {
+    if (resizePending) return;
+    resizePending = true;
+    requestAnimationFrame(() => {
+      resizePending = false;
+      layout();
+      if (reduceMotion.matches) for (const t of tiles) place(t, wheelDeg);
+    });
+  });
+
+  // Pause when the hero scrolls off-screen — saves battery, costs nothing
+  // visible (the hero isn't on screen to see it).
+  if ("IntersectionObserver" in window) {
+    new IntersectionObserver((entries) => {
+      for (const e of entries) {
+        if (reduceMotion.matches) return;
+        if (e.isIntersecting) { if (!raf) { last = 0; raf = requestAnimationFrame(frame); } }
+        else { cancelAnimationFrame(raf); raf = 0; }
+      }
+    }, { threshold: 0 }).observe(hero);
+  }
+
+  // React live to a reduced-motion preference change.
+  reduceMotion.addEventListener?.("change", () => { cancelAnimationFrame(raf); raf = 0; start(); });
+
+  start();
+})();
+</script>
+</body>
+</html>

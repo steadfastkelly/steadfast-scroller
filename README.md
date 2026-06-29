@@ -51,6 +51,35 @@ when those exact faces are unavailable. To wire in the real system, drop the lic
 (~450KB total, down from ~7.6MB) for fast loading. Swap these files (same names) to update
 the spectrum.
 
+`assets/work/optimized/*` — derived AVIF / WebP / JPEG variants at 160/240/320/460 px,
+generated from the JPEGs above by `scripts/build-images.mjs` and consumed by the hero
+carousel (see below). Regenerate with `npm i sharp && node scripts/build-images.mjs`.
+
+## Hero carousel (standalone component)
+
+`hero-carousel.html` is a self-contained, dependency-free hero component that reuses the
+spectrum's curved-wheel composition as a **continuously drifting** thumbnail arc — distinct
+from the scroll-driven story in `index.html`, which is left untouched.
+
+- **Composition.** The 12 thumbnails ride the upper arc of a large invisible wheel and tilt
+  with the rim, overflowing both edges. They drift counter-clockwise (apex moves right → left)
+  as a seamless conveyor: each is `pitch` degrees from the next, and an item leaving the far
+  left wraps a full `N·pitch` span back to the far right entirely off-screen, so there is no
+  visible seam. Motion is **time-based and independent of scroll** (no scroll listeners).
+- **Images.** Each tile is a `<picture>` with AVIF → WebP → JPEG sources and an accurate
+  `srcset`/`sizes`, so the browser fetches one small variant per card (160 px @1×, 320 px @2×)
+  and never the full 460 px master for a thumbnail-sized slot. Intrinsic `width`/`height` are
+  declared (no layout shift); the opening arc loads eagerly at high priority and the rest defer.
+- **Performance.** One `requestAnimationFrame` loop writes only `transform`
+  (`translate3d(…) rotate(…)`) and `opacity` straight to each tile — no layout properties, no
+  framework re-renders. `will-change:transform` is scoped to the 12 tiles; the loop pauses when
+  the hero scrolls off-screen and `prefers-reduced-motion` renders a static arc.
+- **Configuration.** A single `CONFIG` object holds every visual knob — image list + semantic
+  alt text + optional focal point, speed, direction, `pitch` (spacing), hover scale, radius,
+  apex inset, card size and the responsive breakpoints. Hover scales the focused thumbnail to
+  110% via transform only and lifts it with z-index, with no layout shift. Styles are scoped
+  under `.hc-*`.
+
 ## Technical notes
 
 - **Zero dependencies, one file.** The eyes are true word-art sampled from the engraving
