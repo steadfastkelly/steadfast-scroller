@@ -4,7 +4,7 @@
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
 <title>Steadfast — From Jargon to a Spectrum</title>
-<meta name="description" content="A scroll story: ophthalmology terminology assembles into eyes, then blooms into a spectrum of creative work." />
+<meta name="description" content="A scroll story: ophthalmology data assembles into engraved eyes, then blooms into a spectrum of creative work." />
 <style>
   :root{
     --offwhite:#F2EFE8;
@@ -27,37 +27,34 @@
   .scroll-track{height:1000vh;position:relative;}
   .stage{position:sticky;top:0;height:100vh;width:100%;overflow:hidden;background:var(--offwhite);}
   .stage::before{content:"";position:absolute;inset:0;z-index:0;
-    background:radial-gradient(120% 100% at 50% 36%,rgba(255,255,255,.55),rgba(0,0,0,0) 60%),var(--offwhite);}
+    background:radial-gradient(120% 100% at 50% 38%,rgba(255,255,255,.55),rgba(0,0,0,0) 60%),var(--offwhite);}
 
-  /* multicolour glow that blooms with the work spectrum */
   .glow{position:absolute;inset:0;z-index:1;opacity:0;will-change:opacity;
-    background:radial-gradient(42% 42% at 50% 42%,
-      hsla(38,90%,70%,.45),hsla(330,75%,66%,.28) 45%,rgba(0,0,0,0) 72%);}
+    background:radial-gradient(46% 40% at 50% 40%,
+      hsla(38,90%,70%,.42),hsla(330,75%,66%,.26) 46%,rgba(0,0,0,0) 72%);}
 
-  /* hidden geometry sampler */
-  .sampler{position:absolute;left:-9999px;top:0;opacity:0;pointer-events:none;}
-
-  /* terminology words that assemble into eyes */
   .words{position:absolute;inset:0;z-index:3;}
   .word{position:absolute;left:0;top:0;white-space:nowrap;
     font-family:var(--font-body);color:var(--ink);
-    transform-origin:center;will-change:transform,opacity;
-    letter-spacing:.01em;}
+    transform-origin:center;will-change:transform,opacity;letter-spacing:.005em;}
 
   /* work spectrum */
   .spectrum{position:absolute;inset:0;z-index:4;pointer-events:none;}
-  .tile{position:absolute;left:50%;top:60%;
-    border-radius:10px;overflow:hidden;background:var(--offwhite-2);
-    box-shadow:0 18px 40px rgba(20,20,15,.28),0 0 0 3px rgba(255,255,255,.85);
-    will-change:transform,opacity;opacity:0;}
+  .tile{position:absolute;left:0;top:0;will-change:transform,opacity;opacity:0;}
+  .tile-inner{width:100%;height:100%;border-radius:9px;overflow:hidden;
+    background:var(--offwhite-2);transform:scale(1);
+    box-shadow:0 12px 30px rgba(20,20,15,.26);
+    transition:transform .55s cubic-bezier(.2,.75,.2,1),box-shadow .55s cubic-bezier(.2,.75,.2,1);}
   .tile img{display:block;width:100%;height:100%;object-fit:cover;}
+  .tile:hover{z-index:80!important;}
+  .tile:hover .tile-inner{transform:scale(1.16);box-shadow:0 26px 64px rgba(20,20,15,.40);}
 
   /* lower-third copy band — animation never enters here */
   .band{position:absolute;left:0;right:0;bottom:0;height:36vh;z-index:8;
     display:flex;align-items:center;justify-content:center;text-align:center;
     padding:0 6vw 4vh;pointer-events:none;
-    background:linear-gradient(to top,var(--offwhite) 42%,rgba(242,239,232,.85) 70%,rgba(242,239,232,0) 100%);}
-  .band .slot{position:absolute;width:min(92vw,860px);left:50%;transform:translateX(-50%);}
+    background:linear-gradient(to top,var(--offwhite) 44%,rgba(242,239,232,.85) 72%,rgba(242,239,232,0) 100%);}
+  .slot{position:absolute;width:min(92vw,860px);left:50%;transform:translateX(-50%);}
 
   .beat{position:absolute;left:50%;top:50%;width:min(92vw,860px);
     transform:translate(-50%,-50%);opacity:0;will-change:opacity,transform;}
@@ -65,11 +62,9 @@
     font-size:clamp(40px,7vw,92px);letter-spacing:-.01em;line-height:1;}
   .beat .phrase{font-family:var(--font-display);font-stretch:118%;font-weight:700;
     font-size:clamp(26px,4.4vw,54px);line-height:1.08;letter-spacing:-.005em;text-wrap:balance;}
-  .beat .phrase.q{font-style:normal;}
   .beat .hint{font-family:var(--font-body);font-weight:500;font-size:clamp(13px,1.4vw,18px);
     letter-spacing:.2em;text-transform:uppercase;color:var(--ink-soft);}
 
-  /* end composition (eyebrow + headline + paragraph), all in lower third */
   .endwrap{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);
     width:min(92vw,820px);display:flex;flex-direction:column;align-items:center;gap:14px;}
   .endwrap .eyebrow{font-family:var(--font-body);font-weight:600;
@@ -85,7 +80,7 @@
     opacity:0;will-change:opacity,transform;}
 
   .scrollcue{position:absolute;left:50%;bottom:3.5vh;transform:translateX(-50%);z-index:9;
-    width:22px;height:34px;border:1.5px solid var(--ink-soft);border-radius:12px;opacity:.0;}
+    width:22px;height:34px;border:1.5px solid var(--ink-soft);border-radius:12px;opacity:0;}
   .scrollcue::after{content:"";position:absolute;left:50%;top:7px;width:3px;height:7px;border-radius:2px;
     background:var(--ink-soft);transform:translateX(-50%);animation:wheel 1.6s ease-in-out infinite;}
   @keyframes wheel{0%{opacity:0;transform:translate(-50%,0)}40%{opacity:1}100%{opacity:0;transform:translate(-50%,10px)}}
@@ -102,23 +97,20 @@
 <div class="scroll-track">
   <div class="stage" id="stage">
     <div class="glow" id="glow"></div>
-    <svg class="sampler" id="sampler" viewBox="0 0 1000 560" width="1000" height="560"></svg>
     <div class="words" id="words"></div>
     <div class="spectrum" id="spectrum"></div>
     <div class="scrollcue" id="scrollcue"></div>
 
     <div class="band">
-      <div class="slot" id="slot">
-        <!-- sequential beats -->
+      <div class="slot">
         <div class="beat" data-b="0"><div class="hint">Keep scrolling.</div></div>
         <div class="beat" data-b="1"><div class="phrase">Data alone creates complexity&hellip;</div></div>
         <div class="beat" data-b="2"><div class="word-cue">Charts.</div></div>
         <div class="beat" data-b="3"><div class="word-cue">Numbers.</div></div>
         <div class="beat" data-b="4"><div class="word-cue">Findings.</div></div>
         <div class="beat" data-b="5"><div class="phrase">The truth is there.</div></div>
-        <div class="beat" data-b="6"><div class="phrase q">But can your audience see it?</div></div>
+        <div class="beat" data-b="6"><div class="phrase">But can your audience see it?</div></div>
 
-        <!-- end composition -->
         <div class="endwrap" id="endwrap">
           <div class="eyebrow" id="e-eyebrow">The Steadfast Difference</div>
           <h1 id="e-head">Creativity gives complexity <span class="spec">a story.</span></h1>
@@ -132,206 +124,247 @@
 <div class="credit">Steadfast · Visual Storytelling</div>
 
 <script>
+const PI=Math.PI;
 const clamp=(v,a=0,b=1)=>Math.min(b,Math.max(a,v));
 const lerp=(a,b,t)=>a+(b-a)*t;
 const smooth=t=>t*t*(3-2*t);
 const ease=(p,a,b)=>smooth(clamp((p-a)/(b-a)));
-// fade in a->b, hold, fade out c->d (d optional = stays on)
-function op(p,a,b,c,d){
-  if(p<a)return 0;
-  if(p<b)return smooth((p-a)/(b-a));
-  if(d==null||p<c)return 1;
-  if(p<d)return 1-smooth((p-c)/(d-c));
-  return 0;
+function op(p,a,b,c,d){ if(p<a)return 0; if(p<b)return smooth((p-a)/(b-a));
+  if(d==null||p<c)return 1; if(p<d)return 1-smooth((p-c)/(d-c)); return 0; }
+
+/* ---------- terminology + clinical data points ---------- */
+const WORDS=["Retina","Cornea","Macula","Glaucoma","Intraocular","Refraction","Anesthesia",
+"Topical","Ophthalmic","Vitreous","Sclera","Aqueous","Pupil","Iris","Fovea","Choroid",
+"Photoreceptor","Astigmatism","Myopia","Acuity","Diopter","Tonometry","Pachymetry","Fundus",
+"Conjunctiva","Mydriasis","Edema","Endothelium","Keratitis","Uveitis","Drusen","Angiography",
+"Biomarker","Efficacy","Dosing","Bioavailability","Therapeutic","Endpoint","Cohort","Suprachoroidal"];
+const DATA=["20/20","20/40","6/6","6/12","−2.50 D","+1.75 D","−0.75 D","15 mmHg","21 mmHg",
+"18 mmHg","550 µm","512 µm","0.3 logMAR","0.0 logMAR","24-2","30-2","OD","OS","OU","12 mg",
+"0.1 mL","94%","87%","p<0.05","p<0.001","n=240","n=126","450 nm","6.0 mm","ø3.5","±0.25",
+"µm","mmHg","cd/m²","20 Hz","IOP 18","CMT 280","ETDRS 85","36.5°","T½","−6 → −1",
+"ΔE 2.1","λ 532","1.34 mm","±SD","Q12h","≥ 95%","2.3×","φ3"];
+const POOL=[]; for(let i=0;i<WORDS.length;i++){POOL.push(WORDS[i]);}
+for(let i=0;i<DATA.length;i++){POOL.push(DATA[i]);POOL.push(DATA[i]);} // weight data points heavier
+let pi=0; const nextWord=()=>POOL[(pi++*7)%POOL.length];
+
+/* ---------- engraved-eye geometry (local space, iris centre = 0,0) ---------- */
+function q(p0,p1,p2,t){const u=1-t;return [u*u*p0[0]+2*u*t*p1[0]+t*t*p2[0],u*u*p0[1]+2*u*t*p1[1]+t*t*p2[1]];}
+function qd(p0,p1,p2,t){const u=1-t;return [2*u*(p1[0]-p0[0])+2*t*(p2[0]-p1[0]),2*u*(p1[1]-p0[1])+2*t*(p2[1]-p1[1])];}
+const ang=(dx,dy)=>{let a=Math.atan2(dy,dx)*180/PI; if(a>90)a-=180; if(a<-90)a+=180; return a;};
+
+const IC=[-150,8], OC=[160,-12];                 // inner / outer eye corners
+const ULc=[5,-128], LLc=[2,108];                  // upper / lower lid control
+const sampleLid=(c)=>{const arr=[];for(let i=0;i<=60;i++){arr.push(q(IC,c,OC,i/60));}return arr;};
+const ULpts=sampleLid(ULc), LLpts=sampleLid(LLc);
+function lidYat(arr,x){ // nearest-x lookup
+  let best=arr[0],bd=1e9; for(const p of arr){const d=Math.abs(p[0]-x); if(d<bd){bd=d;best=p;}} return best[1]; }
+const CL=[-22,-26];                                // catchlight (left blank)
+const DENS = (innerWidth<760)?0.62:1;             // fewer points on small screens
+
+function buildEye(){
+  const L=[]; const push=(x,y,a,s,w,sh)=>L.push({lx:x,ly:y,ang:a,size:s,weight:w,shade:sh});
+  const n=(c)=>Math.max(2,Math.round(c*DENS));
+
+  // --- upper lid line (the dark defining stroke) ---
+  let N=n(34);
+  for(let i=0;i<=N;i++){const t=i/N;const p=q(IC,ULc,OC,t);const d=qd(IC,ULc,OC,t);
+    push(p[0],p[1],ang(d[0],d[1]),.95,700,1);}
+  // thin parallel above for weight
+  N=n(22);
+  for(let i=0;i<=N;i++){const t=i/N;const p=q(IC,ULc,OC,t);const d=qd(IC,ULc,OC,t);
+    const nl=Math.hypot(d[0],d[1]); push(p[0]-d[1]/nl*3.2,p[1]+d[0]/nl*3.2,ang(d[0],d[1]),.82,600,.78);}
+
+  // --- upper lashes: radiate up/out from lid line ---
+  N=n(18);
+  for(let i=0;i<=N;i++){const t=i/N;const p=q(IC,ULc,OC,t);
+    let a=Math.atan2(p[1]-0,p[0]-0); // radial from centre (points up for upper lid)
+    const len=10+18*Math.pow(t,1.4)+8*(1-t)*0.4;
+    for(let k=1;k<=2;k++){const r=k/2*len;push(p[0]+Math.cos(a)*r,p[1]+Math.sin(a)*r,(a*180/PI+90),.78,600,.92);}}
+
+  // --- lower lid line ---
+  N=n(22);
+  for(let i=0;i<=N;i++){const t=i/N;const p=q(IC,LLc,OC,t);const d=qd(IC,LLc,OC,t);
+    push(p[0],p[1],ang(d[0],d[1]),.86,500,.62);}
+
+  // --- brow: heavy hatched mass ---
+  const B0=[-172,-120],B1=[0,-204],B2=[150,-150];
+  N=n(30);
+  for(let i=0;i<=N;i++){const t=i/N;const p=q(B0,B1,B2,t);const d=qd(B0,B1,B2,t);
+    const ta=Math.atan2(d[1],d[0]);
+    const ha=ta-0.62;                        // hairs sweep up/out from brow line
+    const len=24+30*Math.sin(t*PI);
+    const m=2+Math.round(1*DENS);
+    for(let k=1;k<=m;k++){const r=k/m*len;push(p[0]+Math.cos(ha)*r,p[1]+Math.sin(ha)*r,
+      (ha*180/PI),.96,700,.78+.2*Math.sin(t*PI));}}
+  // dark underside line of brow
+  N=n(24);
+  for(let i=0;i<=N;i++){const t=i/N;const p=q(B0,B1,B2,t);const d=qd(B0,B1,B2,t);
+    const nl=Math.hypot(d[0],d[1]); push(p[0]+d[1]/nl*7,p[1]-d[0]/nl*7,ang(d[0],d[1]),.9,800,1);}
+
+  // --- upper crease (faint) ---
+  N=n(13);
+  for(let i=0;i<=N;i++){const t=i/N;const p=q([-122,-72],[0,-106],[150,-88],t);const d=qd([-122,-72],[0,-106],[150,-88],t);
+    push(p[0],p[1],ang(d[0],d[1]),.8,500,.4);}
+
+  const inEye=(x,y)=>{const yu=lidYat(ULpts,x),yl=lidYat(LLpts,x);return y>=yu-1&&y<=yl+1;};
+  const notCL=(x,y)=>Math.hypot(x-CL[0],y-CL[1])>13;
+
+  // --- iris limbal rings ---
+  for(const [R,cnt,sh,sz] of [[72,46,.82,.85],[66,30,.6,.78]]){
+    const C=n(cnt);
+    for(let i=0;i<C;i++){const a=i/C*2*PI;const x=Math.cos(a)*R,y=Math.sin(a)*R;
+      if(inEye(x,y)&&notCL(x,y))push(x,y,(a*180/PI+90)%180-90<-90?0:ang(-Math.sin(a),Math.cos(a)),sz,600,sh);}}
+
+  // --- iris radial striations ---
+  const RC=n(38);
+  for(let i=0;i<RC;i++){const a=i/RC*2*PI;
+    for(let k=0;k<2;k++){const r=lerp(30,69,k/1.6+ (0.1));const x=Math.cos(a)*r,y=Math.sin(a)*r;
+      if(inEye(x,y)&&notCL(x,y))push(x,y,ang(Math.cos(a),Math.sin(a)),.76,500,.55);}}
+
+  // --- pupil: dense dark ---
+  for(const [R,cnt] of [[9,8],[17,13],[25,18]]){
+    const C=n(cnt);
+    for(let i=0;i<C;i++){const a=i/C*2*PI+R*0.1;const x=Math.cos(a)*R,y=Math.sin(a)*R;
+      if(notCL(x,y))push(x,y,(a*180/PI),.72,800,1);}}
+  push(0,0,0,.72,800,1);
+
+  // --- tear trough + under-eye shading ---
+  N=n(18);
+  for(let i=0;i<=N;i++){const t=i/N;const p=q([-120,72],[0,100],[150,62],t);const d=qd([-120,72],[0,100],[150,62],t);
+    push(p[0],p[1],ang(d[0],d[1]),.8,500,.45);}
+  N=n(9);
+  for(let i=0;i<N;i++){const t=i/N;const x=lerp(-90,120,t);
+    const yTop=lidYat(LLpts,x)+6, yBot=q([-120,72],[0,100],[150,62],clamp((x+120)/270))[1]-4;
+    for(let k=0;k<2;k++){const y=lerp(yTop,yBot,(k+0.5)/2);push(x+6,y,58,.74,400,.34);}}
+
+  // --- corner accents ---
+  for(const corner of [IC,OC]){const C=n(7);
+    for(let i=0;i<C;i++){const a=i/C*2*PI;push(corner[0]+Math.cos(a)*7,corner[1]+Math.sin(a)*5,ang(-Math.sin(a),Math.cos(a)),.74,600,.6);}}
+
+  return L;
 }
+const EYE=buildEye();
 
-/* ---------- terminology ---------- */
-const TERMS=["Retina","Cornea","Macula","Glaucoma","Intraocular","Refraction","Anesthesia",
-"Topical","Ophthalmic","Vitreous","Sclera","Aqueous","Pupil","Iris","Lens","Fovea","Choroid",
-"Photoreceptor","Astigmatism","Myopia","Acuity","Diopter","Tonometry","Pachymetry","Slit-lamp",
-"Fundus","Optic Nerve","Conjunctiva","Lacrimal","Mydriasis","Miosis","Edema","Endothelium",
-"Keratitis","Uveitis","Strabismus","Amblyopia","Presbyopia","Drusen","Angiography","Biomarker",
-"Efficacy","Indication","Dosing","Formulation","Bioavailability","Therapeutic","Mechanism",
-"Endpoint","Cohort","Placebo","Titration","Suprachoroidal","Injection","Suspension","Posterior",
-"Anterior","Chamber","Visual Field","Phakic","logMAR","mmHg","24-2","OCT"];
-
-/* ---------- eye geometry (art space 1000x560) ---------- */
-const CY=262;
-function eye(cx){
-  const hw=165, up=82, dn=58, ir=60, pu=22;
-  return [
-    {role:'brow', count:6,  size:1.0, weight:700, shade:.95, closed:false,
-      d:`M ${cx-hw*0.8} ${CY-116} Q ${cx} ${CY-162} ${cx+hw*0.8} ${CY-120}`},
-    {role:'upper',count:9,  size:.92, weight:600, shade:.80, closed:false,
-      d:`M ${cx-hw} ${CY} Q ${cx} ${CY-up} ${cx+hw} ${CY}`},
-    {role:'lower',count:7,  size:.86, weight:500, shade:.55, closed:false,
-      d:`M ${cx-hw} ${CY} Q ${cx} ${CY+dn} ${cx+hw} ${CY}`},
-    {role:'iris', count:13, size:.8,  weight:600, shade:.86, closed:true,
-      d:`M ${cx+ir} ${CY} A ${ir} ${ir} 0 1 1 ${cx-ir} ${CY} A ${ir} ${ir} 0 1 1 ${cx+ir} ${CY}`},
-    {role:'pupil',count:10, size:.68, weight:800, shade:1,   closed:true,
-      d:`M ${cx+pu} ${CY} A ${pu} ${pu} 0 1 1 ${cx-pu} ${CY} A ${pu} ${pu} 0 1 1 ${cx+pu} ${CY}`},
-  ];
-}
-const CONTOURS=[...eye(300),...eye(700)];
-
-/* sample points + tangents from the hidden SVG */
-const sampler=document.getElementById('sampler');
-const SVGNS="http://www.w3.org/2000/svg";
+/* map local eye to two eyes in art space (right eye mirrored) */
+const ART_W=1000, ART_H=720, ART_CY=270;
+const cxL=315, cxR=685, cyE=320;
 const wordsData=[];
-let ti=0;
-CONTOURS.forEach(c=>{
-  const path=document.createElementNS(SVGNS,'path');
-  path.setAttribute('d',c.d); sampler.appendChild(path);
-  const L=path.getTotalLength();
-  for(let i=0;i<c.count;i++){
-    const len=(c.closed?(i+0.5)/c.count:i/(c.count-1))*L;
-    const p=path.getPointAtLength(len);
-    const p2=path.getPointAtLength((len+1)%L);
-    let ang=Math.atan2(p2.y-p.y,p2.x-p.x)*180/Math.PI;
-    if(ang>90)ang-=180; if(ang<-90)ang+=180;
-    wordsData.push({ax:p.x,ay:p.y,ang,role:c.role,size:c.size,weight:c.weight,shade:c.shade,
-      text:TERMS[ti++%TERMS.length]});
-  }
-});
+for(const e of EYE){
+  // left eye (sign +1)
+  wordsData.push({ax:cxL+e.lx, ay:cyE+e.ly, ang:e.ang, size:e.size, weight:e.weight, shade:e.shade});
+  // right eye (mirror x)
+  wordsData.push({ax:cxR-e.lx, ay:cyE+e.ly, ang:-e.ang, size:e.size, weight:e.weight, shade:e.shade});
+}
 
 /* build word spans */
 const wordsEl=document.getElementById('words');
 wordsData.forEach((w,i)=>{
   const s=document.createElement('span');
-  s.className='word'; s.textContent=w.text;
-  s.style.fontWeight=w.weight;
-  w.el=s; w.delay=((i*0.618033)%1)*0.5; w.span=0.42;
+  s.className='word'; s.textContent=nextWord(); s.style.fontWeight=w.weight;
+  w.el=s; w.delay=((i*0.61803)%1)*0.5; w.span=0.42;
   wordsEl.appendChild(s);
 });
 
-/* ---------- work spectrum tiles ---------- */
-const WORK=[
-  "01-clarisbio","02-utzy","03-alivecor","04-alvus","05-kinnect","06-conformal",
-  "07-ultra-one","08-qapel","09-msi","10-apellis","11-iheezo","12-biotrue"];
-const LABELS={"01-clarisbio":"ClarisBio","02-utzy":"Utzy","03-alivecor":"AliveCor",
-"04-alvus":"Alvus","05-kinnect":"Kinnect","06-conformal":"Conformal","07-ultra-one":"Ultra One",
-"08-qapel":"Qapel","09-msi":"MSI","10-apellis":"Apellis","11-iheezo":"iHeezo","12-biotrue":"BioTrue"};
+/* ---------- work spectrum ---------- */
+const WORK=["01-clarisbio","02-utzy","03-alivecor","04-alvus","05-kinnect","06-conformal",
+"07-ultra-one","08-qapel","09-msi","10-apellis","11-iheezo","12-biotrue"];
+const LABELS={"01-clarisbio":"ClarisBio","02-utzy":"Utzy","03-alivecor":"AliveCor","04-alvus":"Alvus",
+"05-kinnect":"Kinnect","06-conformal":"Conformal","07-ultra-one":"Ultra One","08-qapel":"Qapel",
+"09-msi":"MSI","10-apellis":"Apellis","11-iheezo":"iHeezo","12-biotrue":"BioTrue"};
 const spectrumEl=document.getElementById('spectrum');
 const tiles=[];
 WORK.forEach((name,i)=>{
   const d=document.createElement('div'); d.className='tile';
+  const inner=document.createElement('div'); inner.className='tile-inner';
   const img=document.createElement('img');
   img.src=(window.WORK_DATA&&window.WORK_DATA[name])||`assets/work/${name}.jpg`;
   img.alt=LABELS[name]; img.loading='eager';
-  d.appendChild(img); spectrumEl.appendChild(d);
-  const mid=(WORK.length-1)/2;
-  d.style.zIndex=String(30-Math.round(Math.abs(i-mid)));
+  inner.appendChild(img); d.appendChild(inner); spectrumEl.appendChild(d);
+  d.style.zIndex=String(10+i);
   tiles.push({el:d,i});
 });
 
-/* ---------- layout (screen mapping); recomputed on resize ---------- */
+/* ---------- layout ---------- */
 let M={};
 function layout(){
   const W=innerWidth,H=innerHeight;
-  let artW=Math.min(W*0.92,1000);
-  artW=Math.min(artW, H*0.95*1000/560);
-  const artH=artW*560/1000;
+  let artW=Math.min(W*0.94, H*0.95*ART_W/ART_H);
+  const artH=artW*ART_H/ART_W;
   const ox=(W-artW)/2;
-  const oy=H*0.38-(206/560)*artH;        // map eye visual centre to ~38% vh
-  const base=artW*0.0166;
-  const toX=ax=>ox+ax*artW/1000;
-  const toY=ay=>oy+ay*artH/560;
+  const oy=H*0.40-(ART_CY/ART_H)*artH;
+  const base=artW*0.0112;
   wordsData.forEach(w=>{
-    w.tx=toX(w.ax); w.ty=toY(w.ay);
-    w.fpx=base*w.size;
-    w.el.style.fontSize=w.fpx.toFixed(1)+'px';
+    w.tx=ox+w.ax*artW/ART_W; w.ty=oy+w.ay*artH/ART_H;
+    w.fpx=base*w.size; w.el.style.fontSize=w.fpx.toFixed(2)+'px';
     const fromLeft=w.tx<W/2;
-    w.ex=fromLeft? -W*0.06-Math.random()*W*0.14 : W*1.06+Math.random()*W*0.14;
-    w.ey=clamp(w.ty+(Math.random()-0.5)*H*0.30, H*0.07, H*0.60);
+    w.ex=fromLeft? -W*0.05-Math.random()*W*0.12 : W*1.05+Math.random()*W*0.12;
+    w.ey=clamp(w.ty+(Math.random()-0.5)*H*0.30, H*0.06, H*0.60);
   });
-  // focal point (where jargon funnels & the spectrum blooms from)
-  M.fx=W/2; M.fy=H*0.48;
-  // fan
-  M.pivotX=W/2; M.pivotY=H*0.66;
-  M.radius=Math.min(W*0.30,H*0.40);
-  M.cardW=clamp(Math.min(W,H)*0.15,108,210);
-  M.cardH=M.cardW/0.73;
-  M.spanDeg=140;
+  // composition centre = emerge / collapse point
+  M.coX=W/2; M.coY=H*0.40;
+  // arch
+  M.archR=Math.max(W*0.58,H*0.60);
+  M.archPivotX=W/2; M.archPivotY=H*0.13+M.archR;
+  M.archSpan=170;
+  M.cardW=clamp(Math.min(W,H)*0.155,118,240); M.cardH=M.cardW/0.73;
   tiles.forEach(t=>{
-    t.ang=-M.spanDeg/2 + M.spanDeg*(t.i/(WORK.length-1));
-    t.el.style.width=M.cardW+'px';
-    t.el.style.height=M.cardH+'px';
-    t.el.style.marginLeft=(-M.cardW/2)+'px';
-    t.el.style.marginTop=(-M.cardH/2)+'px';
+    const a=(-M.archSpan/2+M.archSpan*(t.i/(WORK.length-1)))*PI/180;
+    t.fx=M.archPivotX+Math.sin(a)*M.archR;
+    t.fy=M.archPivotY-Math.cos(a)*M.archR;
+    t.rot=a*180/PI*0.92;
+    t.el.style.width=M.cardW+'px'; t.el.style.height=M.cardH+'px';
   });
-  document.querySelector('.spectrum').style.setProperty('--p','');
 }
-addEventListener('resize',()=>{layout();});
-layout();
+addEventListener('resize',layout); layout();
 
 /* ---------- elements ---------- */
-const progress=document.getElementById('progress');
-const glow=document.getElementById('glow');
+const progress=document.getElementById('progress'), glow=document.getElementById('glow');
 const scrollcue=document.getElementById('scrollcue');
 const beats=[...document.querySelectorAll('.beat')];
-const eyebrow=document.getElementById('e-eyebrow');
-const ehead=document.getElementById('e-head');
-const epara=document.getElementById('e-para');
+const eyebrow=document.getElementById('e-eyebrow'),ehead=document.getElementById('e-head'),epara=document.getElementById('e-para');
 
-/* beat windows [fadeInStart, fullStart, fullEnd, fadeOutEnd] */
 const BEAT_WIN=[
-  [0.00,0.015,0.075,0.105], // Keep scrolling.
-  [0.115,0.15,0.265,0.305], // Data alone creates complexity…
-  [0.315,0.335,0.375,0.405],// Charts.
-  [0.415,0.435,0.475,0.505],// Numbers.
-  [0.515,0.535,0.575,0.605],// Findings.
-  [0.615,0.645,0.695,0.725],// The truth is there.
-  [0.735,0.765,0.805,0.84], // But can your audience see it?
-];
+  [0.00,0.015,0.075,0.105],[0.115,0.15,0.265,0.305],[0.315,0.335,0.375,0.405],
+  [0.415,0.435,0.475,0.505],[0.515,0.535,0.575,0.605],[0.615,0.645,0.695,0.725],
+  [0.735,0.765,0.805,0.84]];
 
 /* ---------- render ---------- */
 function render(p){
   progress.style.width=(p*100).toFixed(2)+'%';
   scrollcue.style.opacity=(1-ease(p,0.005,0.04)).toFixed(3);
 
-  const eyesT=clamp((p-0.07)/0.59);       // jargon streams in & assembles into eyes
-  const collapseT=ease(p,0.84,0.905);      // eyes funnel to focal point
-  const bloomT=ease(p,0.85,0.965);         // work spectrum blooms
+  const eyesT=clamp((p-0.07)/0.59);
+  const collapseT=ease(p,0.84,0.905);
+  const bloomT=ease(p,0.85,0.97);
 
-  // words
   for(const w of wordsData){
     const a=smooth(clamp((eyesT-w.delay)/w.span));
     let x=lerp(w.ex,w.tx,a), y=lerp(w.ey,w.ty,a);
-    let sc=lerp(0.5,1,a);
-    let o=w.shade*clamp(a*1.8);
-    if(collapseT>0){
-      x=lerp(x,M.fx,collapseT); y=lerp(y,M.fy,collapseT);
-      sc*=(1-0.8*collapseT); o*=(1-collapseT);
-    }
+    let sc=lerp(0.7,1,a);
+    let o=w.shade*clamp(a*1.9);
+    if(collapseT>0){ x=lerp(x,M.coX,collapseT); y=lerp(y,M.coY,collapseT);
+      sc*=(1-0.82*collapseT); o*=(1-collapseT); }
     w.el.style.opacity=o.toFixed(3);
     w.el.style.transform=`translate(${x.toFixed(1)}px,${y.toFixed(1)}px) translate(-50%,-50%) rotate(${w.ang.toFixed(1)}deg) scale(${Math.max(.02,sc).toFixed(3)})`;
   }
 
-  // glow
   glow.style.opacity=(ease(p,0.85,0.95)*0.95).toFixed(3);
 
-  // spectrum fan
   const mid=(WORK.length-1)/2;
   for(const t of tiles){
-    const delay=(Math.abs(t.i-mid)/(mid+1))*0.22;
-    const bt=smooth(clamp((bloomT-delay)/(1-0.22)));
-    const rot=t.ang*bt, r=M.radius*bt, tilt=-t.ang*0.45*bt, s=0.15+0.85*bt;
-    t.el.style.opacity=clamp(bt*1.5).toFixed(3);
-    t.el.style.transform=`translate(-50%,-50%) rotate(${rot.toFixed(2)}deg) translate(0,${(-r).toFixed(1)}px) rotate(${tilt.toFixed(2)}deg) scale(${s.toFixed(3)})`;
+    const delay=(Math.abs(t.i-mid)/(mid+1))*0.20;
+    const bt=smooth(clamp((bloomT-delay)/(1-0.20)));
+    const x=lerp(M.coX,t.fx,bt), y=lerp(M.coY,t.fy,bt);
+    const rot=t.rot*bt, s=0.12+0.88*bt;
+    t.el.style.opacity=clamp(bt*1.6).toFixed(3);
+    t.el.style.transform=`translate(${x.toFixed(1)}px,${y.toFixed(1)}px) translate(-50%,-50%) rotate(${rot.toFixed(2)}deg) scale(${s.toFixed(3)})`;
   }
+  spectrumEl.style.pointerEvents = bloomT>0.6 ? 'auto':'none';
 
-  // sequential beats
-  beats.forEach(b=>{
-    const w=BEAT_WIN[+b.dataset.b];
-    const o=op(p,w[0],w[1],w[2],w[3]);
-    b.style.opacity=o.toFixed(3);
-    b.style.transform=`translate(-50%,calc(-50% + ${((1-o)*14).toFixed(1)}px))`;
-  });
+  beats.forEach(b=>{const w=BEAT_WIN[+b.dataset.b];const o=op(p,w[0],w[1],w[2],w[3]);
+    b.style.opacity=o.toFixed(3); b.style.transform=`translate(-50%,calc(-50% + ${((1-o)*14).toFixed(1)}px))`;});
 
-  // end composition
-  const oe=op(p,0.85,0.875,1,null);
-  const oh=op(p,0.905,0.94,1,null);
-  const opp=op(p,0.95,0.99,1,null);
+  const oe=op(p,0.85,0.875,1,null),oh=op(p,0.905,0.94,1,null),opp=op(p,0.95,0.99,1,null);
   eyebrow.style.opacity=oe.toFixed(3); eyebrow.style.transform=`translateY(${((1-oe)*12).toFixed(1)}px)`;
   ehead.style.opacity=oh.toFixed(3);   ehead.style.transform=`translateY(${((1-oh)*16).toFixed(1)}px)`;
   epara.style.opacity=opp.toFixed(3);  epara.style.transform=`translateY(${((1-opp)*14).toFixed(1)}px)`;
@@ -339,19 +372,11 @@ function render(p){
 
 /* ---------- scroll loop ---------- */
 let target=0,cur=0;
-function computeTarget(){
-  const max=document.documentElement.scrollHeight-innerHeight;
-  target=max>0?clamp(scrollY/max):0;
-}
+function computeTarget(){const max=document.documentElement.scrollHeight-innerHeight;
+  target=max>0?clamp(scrollY/max):0;}
 addEventListener('scroll',computeTarget,{passive:true});
-addEventListener('resize',computeTarget);
-computeTarget();
-function loop(){
-  cur+=(target-cur)*0.10;
-  if(Math.abs(target-cur)<0.0002)cur=target;
-  render(cur);
-  requestAnimationFrame(loop);
-}
+addEventListener('resize',computeTarget); computeTarget();
+function loop(){cur+=(target-cur)*0.10; if(Math.abs(target-cur)<0.0002)cur=target; render(cur); requestAnimationFrame(loop);}
 loop();
 </script>
 </body>
