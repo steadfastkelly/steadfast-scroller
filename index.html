@@ -37,11 +37,6 @@
 
   /* work spectrum */
   .darkfill{position:absolute;inset:0;z-index:4;background:#0e1110;opacity:0;}
-  /* an existing glyph from the eye, rendered as SVG so it stays razor-sharp as it flies to the
-     camera; its own ink scales up until it becomes the canvas for the work section */
-  .flysvg{position:absolute;inset:0;width:100%;height:100%;z-index:5;overflow:visible;
-    opacity:0;pointer-events:none;will-change:opacity;}
-  .flysvg text{fill:#0e1110;font-family:var(--font-display);font-weight:800;font-stretch:125%;}
   .spectrum{position:absolute;inset:0;z-index:6;pointer-events:none;}
   .tile{position:absolute;left:0;top:0;will-change:transform,opacity;opacity:0;}
   .tile-inner{width:100%;height:100%;border-radius:9px;overflow:hidden;
@@ -99,7 +94,6 @@
   <div class="stage" id="stage">
     <div class="words" id="words"></div>
     <div class="darkfill" id="darkfill"></div>
-    <svg class="flysvg" id="flysvg" aria-hidden="true"><g id="flyg"><text id="flyglyph" text-anchor="middle" dominant-baseline="central">0</text></g></svg>
     <div class="spectrum" id="spectrum"></div>
     <div class="scrollcue" id="scrollcue"></div>
 
@@ -262,10 +256,9 @@ function layout(){
   }
   if(endwrap) endwrap.style.top=endCenter+'px';
 
-  // hero glyph: a real letter at the centre of the RIGHT eye that later flies to the camera
+  // anchor point for the final zoom: the centre of the RIGHT eye, where one of the
+  // illustration's own letters swells until it fills the frame
   M.heroX = ox + 0.785*artW; M.heroY = oy + 0.45*artH;
-  const glyph=document.getElementById('flyglyph');
-  if(glyph){ glyph.setAttribute('font-size',100); glyph.setAttribute('x',24); glyph.setAttribute('y',0); }
 
   const beatTop = mobile ? endCenter : H*0.80;
   beatEls.forEach(b=> b.style.top=beatTop+'px');
@@ -275,8 +268,6 @@ addEventListener('resize',layout); layout();
 /* ---------- elements ---------- */
 const progress=document.getElementById('progress');
 const darkfill=document.getElementById('darkfill');
-const flysvg=document.getElementById('flysvg');
-const flyg=document.getElementById('flyg');
 const band=document.querySelector('.band');
 const credit=document.querySelector('.credit');
 const scrollcue=document.getElementById('scrollcue');
@@ -308,30 +299,23 @@ function render(p){
     w.el.style.opacity=(w.shade*clamp(a*1.9)).toFixed(3);
     w.el.style.transform=`translate(${x.toFixed(1)}px,${y.toFixed(1)}px) translate(-50%,-50%) rotate(${w.ang.toFixed(1)}deg) scale(${Math.max(.02,sc).toFixed(3)})`;
   }
-  // the whole engraved illustration — every letter and character — rushes toward the lens in
-  // concert with the hero glyph: scale the entire word-field up from the hero point (where the
-  // O sits) and dissolve it into the camera, so the O is what remains to fill the screen.
+  // the entire engraved illustration zooms uniformly toward the lens, anchored on the centre of
+  // the right eye, until one of its own letters swells to fill the frame. No separate glyph —
+  // we fly straight *into* the illustration's ink.
   if(zoomT>0){
-    const wz=1+Math.pow(zoomT,3)*22;
+    const wz=1+Math.pow(zoomT,3)*120;
     wordsEl.style.transformOrigin=`${M.heroX.toFixed(1)}px ${M.heroY.toFixed(1)}px`;
     wordsEl.style.transform=`scale(${wz.toFixed(3)})`;
-    wordsEl.style.opacity=(1-smooth(clamp((zoomT-0.10)/0.62))).toFixed(3);
   } else {
     wordsEl.style.transform='none';
-    wordsEl.style.opacity='1';
   }
-  // ...one real letter from the right eye flies to the lens. It's SVG, so scaling its vector
-  // geometry keeps it razor-sharp, and its own ink grows until it IS the background.
-  const inkX=lerp(M.heroX, innerWidth/2, zoomT), inkY=lerp(M.heroY, innerHeight/2, zoomT);
-  const Z=0.16 + Math.pow(zoomT,3)*280;
-  flyg.setAttribute('transform',`translate(${inkX.toFixed(1)} ${inkY.toFixed(1)}) scale(${Z.toFixed(3)})`);
-  flysvg.style.opacity = clamp((p-0.74)/0.045).toFixed(3);   // the glyph is already present in the eye
-  // dark canvas only backs the letter once it has already covered the screen (no white→black switch)
-  const dark = p>=0.873;
-  darkfill.style.opacity = dark?'1':'0';
-  // the off-white gradient at the bottom clears out as the zoom begins, so nothing veils the
-  // O as it fills the screen
-  band.style.opacity = (1-smooth(clamp((p-0.80)/0.06))).toFixed(3);
+  // the solid dark canvas fades up beneath the swelling letter so it lands as a clean full-bleed
+  // background — no cream ever shows through the glyph's negative space.
+  const darkT=smooth(clamp((zoomT-0.45)/0.45));
+  darkfill.style.opacity=darkT.toFixed(3);
+  const dark = darkT>0.5;
+  // the off-white gradient is fully cleared before the zoom takes over, so nothing veils the frame
+  band.style.opacity=(1-smooth(clamp((p-0.74)/0.05))).toFixed(3);
   credit.style.color = dark ? 'rgba(242,239,232,.5)' : 'rgba(70,70,60,.45)';
 
   const mid=(WORK.length-1)/2;
