@@ -45,8 +45,8 @@
     box-shadow:0 14px 34px rgba(0,0,0,.45);
     transition:transform .55s cubic-bezier(.2,.75,.2,1),box-shadow .55s cubic-bezier(.2,.75,.2,1);}
   .tile img{display:block;width:100%;height:100%;object-fit:cover;}
-  .tile:hover{z-index:80!important;}
-  .tile:hover .tile-inner{transform:scale(1.16);box-shadow:0 26px 64px rgba(0,0,0,.6);}
+  .tile:hover{z-index:9999!important;}                 /* lift above the rotating neighbours */
+  .tile:hover .tile-inner{transform:scale(1.10);box-shadow:0 26px 64px rgba(0,0,0,.6);}
 
   /* lower copy — animation never enters here */
   .band{position:absolute;left:0;right:0;bottom:0;height:46vh;z-index:7;pointer-events:none;
@@ -220,7 +220,7 @@ function layout(){
   // (overflowing both edges to imply volume of work) without overlapping.
   let R;
   if(mobile){ M.archSpan=164; M.cardW=clamp(W*0.22,72,138); R=Math.max(W*0.74,H*0.18); }
-  else      { M.archSpan=62;  M.cardW=clamp(Math.min(W,H)*0.15,120,240); R=Math.max(W*1.12,H*1.35); }
+  else      { M.archSpan=84;  M.cardW=clamp(Math.min(W,H)*0.15,120,240); R=Math.max(W*1.12,H*1.35); }
   M.mobile=mobile; M.archSpanRad=M.archSpan*PI/180;
   M.cardH=M.cardW/0.73; M.archR=R; M.archPivotX=W/2;
   const Amax=M.archSpan/2*PI/180;
@@ -341,26 +341,25 @@ function render(p,dt){
   band.style.opacity=(1-smooth(clamp((p-0.74)/0.05))).toFixed(3);
   credit.style.color = dark ? 'rgba(242,239,232,.5)' : 'rgba(70,70,60,.45)';
 
-  // mobile: once the fan has settled, the cards ride a slow ship's wheel — drifting leftward
-  // along the arch and wrapping so the leftmost re-enters from the right (a seamless loop).
-  const spinning = M.mobile && !REDUCE && bloomT>0.985;
-  if(spinning) spinPhase += (dt||0)*0.05;        // rad/s — slow & subtle
-  else if(bloomT<0.5) spinPhase=0;               // reset when scrolled back up
+  // Once the fan has settled, every card rides a large invisible wheel turning counter-clockwise:
+  // cards drift right→left along the visible top arc, and the one leaving the left wraps around
+  // to re-enter from the right. The wrap seam sits beyond the viewport edges, so the loop never
+  // visibly jumps. Position is pure angle→(sin,cos) on a circle; modular arithmetic = seamless.
+  const wheel = !REDUCE && bloomT>0.985;
+  if(wheel) spinPhase += (dt||0)*(M.mobile?0.05:0.038);   // rad/s — slow, linear, premium
+  else if(bloomT<0.5) spinPhase=0;                        // reset when scrolled back up
 
-  const mid=(WORK.length-1)/2, span=M.archSpanRad;
+  const mid=(WORK.length-1)/2, span=M.archSpanRad, rotF=M.mobile?0.92:0.5;
   for(const t of tiles){
     const delay=(Math.abs(t.i-mid)/(mid+1))*0.20;
     const bt=smooth(clamp((bloomT-delay)/(1-0.20)));
-    let fx=t.fx, fy=t.fy, frot=t.rot;
-    if(M.mobile){
-      let av=t.baseA - spinPhase;                              // drift leftward
-      av=((av + span/2) % span + span) % span - span/2;        // wrap into [-span/2, span/2)
-      fx=M.archPivotX+Math.sin(av)*M.archR;
-      fy=M.archPivotY-M.archR*Math.cos(av);
-      frot=av*180/PI*0.92;
-      t.el.style.zIndex=String(2000-Math.round(Math.abs(av)*1000)); // centre cards ride on top
-    }
-    const x=lerp(M.coX,fx,bt), y=lerp(M.coY,fy,bt);
+    let av=t.baseA - spinPhase;                              // counter-clockwise drift
+    av=((av + span/2) % span + span) % span - span/2;        // wrap into [-span/2, span/2)
+    const fx=M.archPivotX+Math.sin(av)*M.archR;              // point on the wheel's edge
+    const fy=M.archPivotY-M.archR*Math.cos(av);
+    const frot=av*180/PI*rotF;                               // only slightly rotated — stays readable
+    t.el.style.zIndex=String(1000-Math.round(Math.abs(av)*500)); // centre cards on top; hover lifts to 9999
+    const x=lerp(M.coX,fx,bt), y=lerp(M.coY,fy,bt);          // bloom in from centre, then ride the wheel
     const rot=frot*bt, s=0.12+0.88*bt;
     t.el.style.opacity=clamp(bt*1.6).toFixed(3);
     t.el.style.transform=`translate(${x.toFixed(1)}px,${y.toFixed(1)}px) translate(-50%,-50%) rotate(${rot.toFixed(2)}deg) scale(${s.toFixed(3)})`;
