@@ -1,0 +1,133 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1"/>
+<title>Dynamic Scroll Animation — reference skeleton</title>
+<style>
+  :root{ --bg:#F2EFE8; --ink:#16161a; }
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{background:var(--bg);font-family:ui-sans-serif,system-ui,"Helvetica Neue",Arial,sans-serif;overflow-x:hidden}
+  .scroll-track{height:1800vh;position:relative}              /* ← total scroll length / pacing */
+  .stage{position:sticky;top:0;height:100vh;width:100%;overflow:hidden;background:var(--bg)}
+  #pieces{position:absolute;inset:0;width:100%;height:100%;z-index:1}
+  .content{position:absolute;inset:0;z-index:2;display:flex;flex-direction:column;
+    align-items:center;justify-content:center;gap:18px;text-align:center;pointer-events:none}
+  .content .eyebrow{font-size:13px;letter-spacing:.34em;text-transform:uppercase;color:#cfe;opacity:0}
+  .content h1{font-size:clamp(34px,6vw,76px);line-height:1.02;color:#fff;opacity:0;text-wrap:balance;max-width:14ch}
+  .content p{font-size:clamp(15px,1.7vw,21px);color:#cdd;max-width:42ch;opacity:0}
+  @media (prefers-reduced-motion:reduce){ }
+</style>
+</head>
+<body>
+<div class="scroll-track">
+  <div class="stage">
+    <canvas id="pieces" aria-hidden="true"></canvas>
+    <div class="content">
+      <div class="eyebrow" id="c-eyebrow">Your eyebrow</div>
+      <h1 id="c-head">The payoff headline lands here.</h1>
+      <p id="c-para">Supporting copy arrives on the new background once the takeover completes.</p>
+    </div>
+  </div>
+</div>
+
+<script>
+const clamp=(v,a=0,b=1)=>Math.min(b,Math.max(a,v));
+const lerp=(a,b,t)=>a+(b-a)*t;
+const smooth=t=>t*t*(3-2*t);
+function pw(p,k){for(let i=1;i<k.length;i++){if(p<=k[i][0]){
+  const t=(p-k[i-1][0])/((k[i][0]-k[i-1][0])||1);return lerp(k[i-1][1],k[i][1],clamp(t));}}return k[k.length-1][1];}
+function op(p,a,b){return smooth(clamp((p-a)/(b-a)));}            // simple fade-in window
+
+/* ---- timelines (tune these) ---- */
+const KF_ASSEMBLE=[[0,0],[0.06,0],[0.70,1],[1,1]];
+const KF_TAKEOVER=[[0,0],[0.78,0],[0.875,1],[1,1]];
+const PI=Math.PI;
+
+/* ---- pieces: replace with your own composition's coords/colors ---- */
+/* Demo: a ring of dots forms a circle, then one accent dot's color takes over. */
+const TAKEOVER_COLOR='#16161a';                                  // ← color that becomes the background
+const PIECES=[];
+const COUNT=140;
+for(let i=0;i<COUNT;i++){
+  const ang=(i/COUNT)*PI*2, r=0.30 + ((i*0.61803)%1-0.5)*0.05;   // ring with slight jitter
+  const accent = i%14===0;
+  PIECES.push({
+    nx:0.5+Math.cos(ang)*r, ny:0.5+Math.sin(ang)*r*1.0,          // normalized target
+    rad: accent?9:4+((i*0.61803)%1)*4,                            // dot radius (px-ish, scaled by min dim)
+    color: accent ? '#d9583b' : TAKEOVER_COLOR,
+    delay:((i*0.61803)%1)*0.5, span:0.5,                          // staggered assembly
+    jx:Math.cos(i*2.4), jy:Math.sin(i*2.4)                        // scatter direction for the dive
+  });
+}
+// pick a source piece near centre-top of the ring as the takeover anchor
+const SRC=PIECES[Math.floor(COUNT*0.25)]; SRC.color='#d9583b'; SRC.rad=11;
+
+/* ---- canvas ---- */
+const cv=document.getElementById('pieces'), ctx=cv.getContext('2d');
+let W=0,H=0,DPR=1,UNIT=1;
+function layout(){
+  W=innerWidth; H=innerHeight; DPR=Math.min(devicePixelRatio||1,2);
+  cv.width=Math.round(W*DPR); cv.height=Math.round(H*DPR);
+  cv.style.width=W+'px'; cv.style.height=H+'px';
+  UNIT=Math.min(W,H)/900;                                         // scales dot radii responsively
+  for(const it of PIECES){
+    it.tx=it.nx*W; it.ty=it.ny*H;                                 // screen target
+    it.ex=(it.nx<0.5? -0.1: 1.1)*W;                               // enter from nearest side
+    it.ey=it.ty+(((it.delay*97)%1)-0.5)*H*0.4;
+  }
+}
+addEventListener('resize',layout); layout();
+
+const eyebrow=document.getElementById('c-eyebrow'),head=document.getElementById('c-head'),para=document.getElementById('c-para');
+
+function render(p,dt){
+  const aT=smooth(pw(p,KF_ASSEMBLE));
+  const tk=smooth(pw(p,KF_TAKEOVER));
+  const Z=1+Math.pow(tk,3)*60;                                    // dive zoom magnitude
+  const cx=lerp(SRC.tx,W/2,tk), cy=lerp(SRC.ty,H/2,tk);           // dive origin → screen centre
+
+  ctx.setTransform(DPR,0,0,DPR,0,0);
+  ctx.clearRect(0,0,W,H);
+
+  if(p<0.875){                                                    // draw pieces (assemble + dive)
+    for(const it of PIECES){
+      const a=smooth(clamp((aT-it.delay)/it.span));
+      if(a<=0.001) continue;
+      let x=lerp(it.ex,it.tx,a), y=lerp(it.ey,it.ty,a), s=lerp(0.6,1,a);
+      if(tk>0){                                                   // dive: scale around centre, fling others out
+        x = cx + (it.tx-SRC.tx)*Z + it.jx*Math.pow(tk,2)*220;
+        y = cy + (it.ty-SRC.ty)*Z + it.jy*Math.pow(tk,2)*220;
+        s = s*Z;
+      }
+      if(x<-80||x>W+80||y<-80||y>H+80) continue;                  // cull off-screen
+      ctx.globalAlpha=clamp(a*1.9);
+      ctx.fillStyle=it.color;
+      ctx.beginPath(); ctx.arc(x,y,Math.max(0.3,it.rad*UNIT*s),0,PI*2); ctx.fill();
+    }
+    ctx.globalAlpha=1;
+    // aperture: the takeover colour blooms out of the source piece and fills the frame
+    if(tk>0){
+      const coreR=smooth(clamp((tk-0.40)/0.55))*Math.hypot(W,H)*0.62;
+      if(coreR>0.5){ ctx.fillStyle=TAKEOVER_COLOR; ctx.beginPath(); ctx.arc(cx,cy,coreR,0,PI*2); ctx.fill(); }
+    }
+  } else {                                                        // takeover complete: lock background colour
+    ctx.fillStyle=TAKEOVER_COLOR; ctx.fillRect(0,0,W,H);
+  }
+
+  // next-section content reveals only AFTER the takeover
+  eyebrow.style.opacity=op(p,0.885,0.91).toFixed(3);
+  head.style.opacity  =op(p,0.905,0.945).toFixed(3);
+  para.style.opacity  =op(p,0.95,0.99).toFixed(3);
+}
+
+/* ---- scroll loop ---- */
+let target=0,cur=0,prevMS=performance.now();
+addEventListener('scroll',()=>{const m=document.documentElement.scrollHeight-innerHeight;
+  target=m>0?clamp(scrollY/m):0;},{passive:true});
+function loop(){const now=performance.now(),dt=Math.min(0.05,(now-prevMS)/1000);prevMS=now;
+  cur+=(target-cur)*0.10; if(Math.abs(target-cur)<2e-4)cur=target; render(cur,dt); requestAnimationFrame(loop);}
+loop();
+</script>
+</body>
+</html>

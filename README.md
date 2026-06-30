@@ -72,6 +72,20 @@ the spectrum.
   scrim; the spectrum settles into a wide arch with the closing message resting beneath it.
 - Respects `prefers-reduced-motion`.
 
+## Reusable technique → `dynamic-scroll-animation` skill
+
+The core method behind this piece — **pieces assemble from scattered positions, then one
+element's color blooms out from its position to become the next section's background (a
+seamless color takeover, no hard cut), with content arriving on the new background** — is
+saved as a reusable Claude Code skill at
+[`.claude/skills/dynamic-scroll-animation/`](.claude/skills/dynamic-scroll-animation/).
+
+It documents the progress→keyframe timeline, assembly easing, the aperture color-takeover and
+its pitfalls, the Canvas performance approach, optional depth-of-field, the tunable variables,
+and the deterministic frame-by-frame video export — plus a framework-free `reference.html`
+template. The skill is available automatically when working in this repo; copy the folder into
+`~/.claude/skills/` to use it across all projects.
+
 ### Building the Artifact / phone-preview version
 
 The Claude Artifact is body-level HTML under a strict CSP, so the work images must be
