@@ -1,8 +1,8 @@
 name: Deploy live preview to GitHub Pages
 
+# Manual trigger only — run this after Pages is enabled with Source = "GitHub Actions".
+# (The Actions token can't auto-create the Pages site, so enablement is a one-time owner action.)
 on:
-  push:
-    branches: ["claude/eye-illustration-zoom-xqpyij"]
   workflow_dispatch:
 
 permissions:
