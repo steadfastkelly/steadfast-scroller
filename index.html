@@ -90,6 +90,64 @@
     font-size:10px;letter-spacing:.18em;text-transform:uppercase;color:var(--ink-soft);opacity:.45;}
 
   @media (prefers-reduced-motion: reduce){ .scrollcue::after{animation:none;} }
+
+  /* ===================================================================
+     Hero carousel — the living spectrum wheel that follows the scroll
+     story. Styles scoped under .hc-* so they never touch the story above;
+     animation touches only `transform` and `opacity`.
+     =================================================================== */
+  .hc-hero{
+    position:relative;
+    width:100%;
+    height:clamp(420px, 64vh, 760px);
+    overflow:hidden;                       /* clips the off-screen lower wheel */
+    background:
+      radial-gradient(120% 90% at 50% 28%,rgba(255,255,255,.6),rgba(0,0,0,0) 62%),
+      var(--offwhite);
+    isolation:isolate;                     /* own stacking context for z-index */
+    contain:layout paint;                  /* confine layout/paint to the hero */
+  }
+  .hc-wheel{position:absolute;inset:0;z-index:1;pointer-events:none;}
+  .hc-tile{
+    position:absolute;left:0;top:0;
+    transform:translate3d(-9999px,-9999px,0);   /* parked until first frame */
+    will-change:transform;                       /* promote ONLY the tiles */
+    pointer-events:auto;
+    opacity:0;                                   /* faded in by the loop */
+    z-index:var(--z, 100);                       /* depth set via variable so... */
+  }
+  .hc-card{
+    width:100%;height:100%;
+    border-radius:10px;overflow:hidden;
+    background:var(--offwhite-2);
+    box-shadow:0 14px 34px rgba(0,0,0,.42);
+    transform:scale(1) translateZ(0);
+    transition:transform .55s cubic-bezier(.2,.75,.2,1),
+               box-shadow .55s cubic-bezier(.2,.75,.2,1);
+  }
+  .hc-card picture,.hc-card img{display:block;width:100%;height:100%;}
+  .hc-card img{object-fit:cover;}
+  .hc-tile:hover{z-index:300;}              /* ...the :hover rule reliably wins over it */
+  .hc-tile:hover .hc-card{
+    transform:scale(1.10) translateZ(0);         /* hover = 110%, transform only */
+    box-shadow:0 26px 64px rgba(0,0,0,.55);
+  }
+  .hc-copy{
+    position:absolute;left:50%;bottom:7%;z-index:50;
+    width:min(92vw,720px);transform:translateX(-50%);
+    text-align:center;pointer-events:none;
+  }
+  .hc-copy .eyebrow{font-family:var(--font-body);font-weight:600;
+    font-size:clamp(11px,1.15vw,14px);letter-spacing:.32em;text-transform:uppercase;
+    color:var(--ink-soft);}
+  .hc-copy h1{font-family:var(--font-display);font-stretch:125%;font-weight:800;
+    font-size:clamp(28px,4.6vw,56px);line-height:1.04;letter-spacing:-.012em;
+    margin-top:10px;text-wrap:balance;}
+  .hc-copy h1 .spec{background:linear-gradient(92deg,#126a56,#1f9a72,#168568);
+    -webkit-background-clip:text;background-clip:text;color:transparent;}
+  @media (prefers-reduced-motion: reduce){
+    .hc-tile,.hc-card{transition:none!important;}
+  }
 </style>
 </head>
 <body>
@@ -121,6 +179,16 @@
     </div>
   </div>
 </div>
+
+<!-- The story blooms into the spectrum; here it comes alive as a slow,
+     continuously drifting wheel of the same work. Independent of scroll. -->
+<section class="hc-hero" id="hero" aria-label="Steadfast work showcase">
+  <div class="hc-wheel" id="wheel"></div>
+  <div class="hc-copy">
+    <div class="eyebrow">Selected work</div>
+    <h1>A living <span class="spec">spectrum of stories.</span></h1>
+  </div>
+</section>
 
 <div class="credit">Steadfast · Visual Storytelling</div>
 
@@ -343,13 +411,199 @@ function render(p){
 }
 
 /* ---------- scroll loop ---------- */
-let target=0,cur=0;
-function computeTarget(){const max=document.documentElement.scrollHeight-innerHeight;
+let target=0,cur=0,lastP=-1;
+// progress is measured over the scroll-track ONLY, so sections appended below
+// (the hero carousel) don't stretch the story's timeline or stop it finishing.
+const scrollTrack=document.querySelector('.scroll-track');
+function computeTarget(){const max=scrollTrack.offsetHeight-innerHeight;
   target=max>0?clamp(scrollY/max):0;}
 addEventListener('scroll',computeTarget,{passive:true});
-addEventListener('resize',computeTarget); computeTarget();
-function loop(){cur+=(target-cur)*0.10; if(Math.abs(target-cur)<0.0002)cur=target; render(cur); requestAnimationFrame(loop);}
+addEventListener('resize',()=>{computeTarget();lastP=-1;}); computeTarget();
+// only re-render when the eased progress actually changes — once the story is
+// scrolled past and idle, it stops re-transforming its ~1000 nodes every frame.
+function loop(){cur+=(target-cur)*0.10; if(Math.abs(target-cur)<0.0002)cur=target;
+  if(cur!==lastP){render(cur);lastP=cur;} requestAnimationFrame(loop);}
 loop();
+</script>
+
+<script>
+/* =====================================================================
+   Hero carousel — the living spectrum wheel beneath the scroll story.
+   Self-contained IIFE (no globals leak into the story above). The 12
+   thumbnails ride the upper arc of a large invisible wheel and drift
+   counter-clockwise as a seamless conveyor — time-based, independent of
+   scroll. Per frame it writes only `transform` + `opacity`; the loop
+   pauses when the hero is off-screen and respects prefers-reduced-motion.
+   The standalone, documented version lives in hero-carousel.html.
+   ===================================================================== */
+(function () {
+  "use strict";
+  const PI = Math.PI, DEG = 180 / PI;
+
+  const CONFIG = {
+    images: [
+      { name: "01-clarisbio", alt: "ClarisBio — Steadfast visual storytelling project" },
+      { name: "02-utzy",      alt: "Utzy — Steadfast visual storytelling project" },
+      { name: "03-alivecor",  alt: "AliveCor — Steadfast visual storytelling project" },
+      { name: "04-alvus",     alt: "Alvus — Steadfast visual storytelling project" },
+      { name: "05-kinnect",   alt: "Kinnect — Steadfast visual storytelling project" },
+      { name: "06-conformal", alt: "Conformal — Steadfast visual storytelling project" },
+      { name: "07-ultra-one", alt: "Ultra One — Steadfast visual storytelling project" },
+      { name: "08-qapel",     alt: "Qapel — Steadfast visual storytelling project" },
+      { name: "09-msi",       alt: "MSI — Steadfast visual storytelling project" },
+      { name: "10-apellis",   alt: "Apellis — Steadfast visual storytelling project" },
+      { name: "11-iheezo",    alt: "iHeezo — Steadfast visual storytelling project" },
+      { name: "12-biotrue",   alt: "BioTrue — Steadfast visual storytelling project" },
+    ],
+    assetBase: "assets/work/optimized",
+    srcWidths: [160, 240, 320, 460],
+    fallbackWidth: 460,
+    intrinsicW: 460, intrinsicH: 631,
+    aspect: 460 / 631,
+    sizes: "(max-width: 819px) 26vw, clamp(120px, min(15vw, 15vh), 240px)",
+    speed: 2.6, direction: -1, rotationFactor: 0.92, hoverScale: 1.10,
+    breakpoints: {
+      desktop: { maxW: Infinity, radiusFactor: 1.15, cardVMin: 0.15, cardMin: 120, cardMax: 240, apexInsetVH: 0.085, pitch: 11, visibleHalf: 32, fadeBand: 9 },
+      tablet:  { maxW: 1024,     radiusFactor: 1.20, cardVMin: 0.20, cardMin: 104, cardMax: 190, apexInsetVH: 0.075, pitch: 13, visibleHalf: 34, fadeBand: 9 },
+      mobile:  { maxW: 640,      radiusFactor: 1.25, cardVMin: 0.27, cardMin: 88,  cardMax: 150, apexInsetVH: 0.06,  pitch: 15, visibleHalf: 36, fadeBand: 9 },
+    },
+  };
+
+  const clamp = (v, a, b) => Math.min(b, Math.max(a, v));
+  const smooth = (t) => t * t * (3 - 2 * t);
+  const wrapSpan = (v, span) => { const h = span / 2; return ((((v + h) % span) + span) % span) - h; };
+
+  const hero = document.getElementById("hero");
+  const wheel = document.getElementById("wheel");
+  const reduceMotion = matchMedia("(prefers-reduced-motion: reduce)");
+
+  const N = CONFIG.images.length;
+  const BP0 = CONFIG.breakpoints.desktop;
+  const tiles = CONFIG.images.map((img, i) => {
+    const tile = document.createElement("div"); tile.className = "hc-tile";
+    const card = document.createElement("div"); card.className = "hc-card";
+    const srcset = (ext) =>
+      CONFIG.srcWidths.map((w) => `${CONFIG.assetBase}/${img.name}-${w}.${ext} ${w}w`).join(", ");
+    const picture = document.createElement("picture");
+    const avif = document.createElement("source");
+    avif.type = "image/avif"; avif.srcset = srcset("avif"); avif.sizes = CONFIG.sizes;
+    const webp = document.createElement("source");
+    webp.type = "image/webp"; webp.srcset = srcset("webp"); webp.sizes = CONFIG.sizes;
+    const el = document.createElement("img");
+    el.width = CONFIG.intrinsicW; el.height = CONFIG.intrinsicH;
+    el.alt = img.alt; el.decoding = "async"; el.sizes = CONFIG.sizes;
+    if (img.focal) el.style.objectPosition = img.focal;
+    const onArc = Math.abs(wrapSpan(i * BP0.pitch, N * BP0.pitch)) <= BP0.visibleHalf + BP0.fadeBand;
+    el.loading = onArc ? "eager" : "lazy";
+    el.fetchPriority = onArc ? "high" : "low";
+    el.srcset = srcset("jpg");
+    el.src = `${CONFIG.assetBase}/${img.name}-${CONFIG.fallbackWidth}.jpg`;
+    picture.append(avif, webp, el); card.append(picture); tile.append(card); wheel.append(tile);
+    return { tile, card, img: el, i };
+  });
+
+  let geo = null;
+  function pickBp(W) {
+    const b = CONFIG.breakpoints;
+    if (W <= b.mobile.maxW) return b.mobile;
+    if (W <= b.tablet.maxW) return b.tablet;
+    return b.desktop;
+  }
+  function layout() {
+    const W = hero.clientWidth, H = hero.clientHeight, vmin = Math.min(W, H);
+    const bp = pickBp(W);
+    const cardW = clamp(vmin * bp.cardVMin, bp.cardMin, bp.cardMax);
+    const cardH = cardW / CONFIG.aspect;
+    const R = W * bp.radiusFactor;
+    const apexY = H * bp.apexInsetVH + cardH / 2;
+    geo = { W, H, cardW, cardH, R, cx: W / 2, cy: apexY + R,
+      pitch: bp.pitch, wrap: N * bp.pitch, visibleHalf: bp.visibleHalf, fadeBand: bp.fadeBand };
+    for (const t of tiles) {
+      t.tile.style.width = cardW + "px"; t.tile.style.height = cardH + "px";
+      t.tile.style.marginLeft = -cardW / 2 + "px"; t.tile.style.marginTop = -cardH / 2 + "px";
+    }
+    return geo;
+  }
+
+  function place(t, wheelDeg) {
+    const a = wrapSpan(t.i * geo.pitch + wheelDeg, geo.wrap);
+    const vh = geo.visibleHalf, fb = geo.fadeBand, absA = Math.abs(a);
+    if (absA > vh + fb) {
+      if (t.shown !== false) {
+        t.tile.style.opacity = "0";
+        t.tile.style.transform = "translate3d(-9999px,-9999px,0)";
+        t.shown = false;
+      }
+      return;
+    }
+    t.shown = true;
+    const rad = a / DEG;
+    const x = geo.cx + Math.sin(rad) * geo.R;
+    const y = geo.cy - Math.cos(rad) * geo.R;
+    const rot = a * CONFIG.rotationFactor;
+    const fade = absA <= vh - fb ? 1 : smooth(clamp((vh + fb - absA) / (2 * fb), 0, 1));
+    const z = 100 + Math.round(Math.cos(rad) * 60);
+    t.tile.style.transform =
+      `translate3d(${x.toFixed(2)}px, ${y.toFixed(2)}px, 0) rotate(${rot.toFixed(2)}deg)`;
+    t.tile.style.opacity = fade.toFixed(3);
+    if (t.z !== z) { t.tile.style.setProperty("--z", z); t.z = z; }
+  }
+
+  function primeLoading(wheelDeg) {
+    const vh = geo.visibleHalf, fb = geo.fadeBand;
+    for (const t of tiles) {
+      const visible = Math.abs(wrapSpan(t.i * geo.pitch + wheelDeg, geo.wrap)) <= vh + fb;
+      t.img.loading = visible ? "eager" : "lazy";
+      t.img.fetchPriority = visible ? "high" : "low";
+    }
+    const warm = () => { for (const t of tiles) t.img.loading = "eager"; };
+    if ("requestIdleCallback" in window) requestIdleCallback(warm, { timeout: 2500 });
+    else setTimeout(warm, 1800);
+  }
+
+  let wheelDeg = 0, last = 0, raf = 0;
+  function frame(now) {
+    if (!last) last = now;
+    const dt = (now - last) / 1000; last = now;
+    wheelDeg = (wheelDeg + CONFIG.direction * CONFIG.speed * dt) % 360;
+    for (const t of tiles) place(t, wheelDeg);
+    raf = requestAnimationFrame(frame);
+  }
+
+  function start() {
+    layout(); primeLoading(0);
+    if (reduceMotion.matches) {
+      for (const t of tiles) place(t, 0);
+      for (const t of tiles) t.img.loading = "eager";
+      return;
+    }
+    cancelAnimationFrame(raf); last = 0;
+    raf = requestAnimationFrame(frame);
+  }
+
+  let resizePending = false;
+  addEventListener("resize", () => {
+    if (resizePending) return;
+    resizePending = true;
+    requestAnimationFrame(() => {
+      resizePending = false; layout();
+      if (reduceMotion.matches) for (const t of tiles) place(t, wheelDeg);
+    });
+  });
+
+  if ("IntersectionObserver" in window) {
+    new IntersectionObserver((entries) => {
+      for (const e of entries) {
+        if (reduceMotion.matches) return;
+        if (e.isIntersecting) { if (!raf) { last = 0; raf = requestAnimationFrame(frame); } }
+        else { cancelAnimationFrame(raf); raf = 0; }
+      }
+    }, { threshold: 0 }).observe(hero);
+  }
+
+  reduceMotion.addEventListener?.("change", () => { cancelAnimationFrame(raf); raf = 0; start(); });
+  start();
+})();
 </script>
 </body>
 </html>
