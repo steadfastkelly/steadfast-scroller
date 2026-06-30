@@ -363,6 +363,14 @@ function drawWords(eyesT,zoomT,Z,scat,ocx,ocy,sharp){
       } else wctx.fillText(w.text,x,y);
     }
   }
+  // The dive's black is BORN from the centre where the anchor letter swells: an ink aperture
+  // grows out of that point and fills the frame, so the off-white gives way to black
+  // continuously (no off-white→black cut) and the zoom into the letter IS what turns it black.
+  if(zoomT>0){
+    const coreR=smooth(clamp((zoomT-0.40)/0.55))*Math.hypot(M.W,M.H)*0.62;
+    if(coreR>0.5){ wctx.filter='none'; wctx.globalAlpha=1; wctx.fillStyle=INK;
+      wctx.beginPath(); wctx.arc(ocx,ocy,coreR,0,PI*2); wctx.fill(); }
+  }
   wctx.filter='none'; wctx.globalAlpha=1;
 }
 
@@ -389,7 +397,9 @@ function render(p,dt){
   const ocx=lerp(M.heroX, M.W/2, zoomT), ocy=lerp(M.heroY, M.H/2, zoomT);
   const moved=Math.abs(p-(M.lastWP==null?-1:M.lastWP))>0.0002;
   if(p>=0.87){
-    if(!M.wordsHidden){ wctx.setTransform(1,0,0,1,0,0); wctx.clearRect(0,0,wordsCv.width,wordsCv.height); M.wordsHidden=true; }
+    // the aperture has already filled the frame — lock the canvas to solid ink as the backdrop
+    // the payoff copy and fan arrive on (seamless with the grown aperture; no separate dark div)
+    if(!M.wordsHidden){ wctx.setTransform(1,0,0,1,0,0); wctx.fillStyle=INK; wctx.fillRect(0,0,wordsCv.width,wordsCv.height); M.wordsHidden=true; }
   } else {
     M.wordsHidden=false;
     if(moved||zoomT>0){ drawWords(eyesT,zoomT,Z,scat,ocx,ocy,true); M.restDrawn=false; }   // sharp while moving/diving
@@ -400,7 +410,7 @@ function render(p,dt){
   // only snaps in (instantly, no fade) once the letter already covers the screen, purely to back
   // the payoff copy and the fan that follow.
   const dark = p>=0.87;
-  darkfill.style.opacity = dark?'1':'0';
+  darkfill.style.opacity = '0';   // black backdrop now comes from the canvas aperture, not a hard-cut div
   // the off-white gradient is fully cleared before the zoom takes over, so nothing veils the frame
   band.style.opacity=(1-smooth(clamp((p-0.74)/0.05))).toFixed(3);
   credit.style.color = dark ? 'rgba(242,239,232,.5)' : 'rgba(70,70,60,.45)';
