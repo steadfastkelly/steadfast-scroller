@@ -5,15 +5,21 @@
 <meta name="viewport" content="width=device-width, initial-scale=1" />
 <title>Steadfast — From Jargon to a Spectrum</title>
 <meta name="description" content="A scroll story: ophthalmology data assembles into engraved eyes, then blooms into a spectrum of creative work." />
+<!-- Public stand-in for the licensed brand faces: Roboto Flex is variable (weight + width),
+     so the design's font-stretch still works. The real Zolando / Google Sans Flex stay first
+     in the stacks below and win wherever they're licensed/installed. -->
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Roboto+Flex:wdth,wght@25..151,100..1000&display=swap">
 <style>
   :root{
     --offwhite:#F2EFE8;
     --offwhite-2:#ECE8DF;
     --ink:#14140F;
     --ink-soft:#46463c;
-    --font-display:"Zolando Sans Extended","Zolando Sans","Google Sans Flex",
+    --font-display:"Zolando Sans Extended","Zolando Sans","Google Sans Flex","Roboto Flex",
                    ui-sans-serif,"Helvetica Neue",Arial,sans-serif;
-    --font-body:"Google Sans Flex","Google Sans",ui-sans-serif,system-ui,
+    --font-body:"Google Sans Flex","Google Sans","Roboto Flex",ui-sans-serif,system-ui,
                 "Helvetica Neue",Arial,sans-serif;
   }
   *{box-sizing:border-box;margin:0;padding:0;}
@@ -178,7 +184,7 @@ const DEPTH={ scaleRange:0.34, foreFrac:0.13, backFade:0.42,
               sharp:0.50, soft:0.80, blur1:0.7, blur2:1.5 };
 
 const INK='#14140F';
-const WFONT='"Google Sans Flex","Google Sans",ui-sans-serif,system-ui,"Helvetica Neue",Arial,sans-serif';
+const WFONT='"Google Sans Flex","Google Sans","Roboto Flex",ui-sans-serif,system-ui,"Helvetica Neue",Arial,sans-serif';
 const wordsCv=document.getElementById('words');
 const wctx=wordsCv.getContext('2d');
 let WDPR=1;
@@ -462,6 +468,13 @@ function loop(){
   render(cur,dt); requestAnimationFrame(loop);
 }
 loop();
+
+// the word-field is drawn on a canvas, which won't reflow when a webfont arrives — so once
+// Roboto Flex has loaded, invalidate the cached frame to force one repaint in the real face
+if(document.fonts&&document.fonts.load){
+  Promise.all([document.fonts.load('400 20px "Roboto Flex"'),document.fonts.load('700 20px "Roboto Flex"')])
+    .then(()=>document.fonts.ready).then(()=>{ M.restDrawn=false; M.lastWP=null; M.wordsHidden=false; });
+}
 </script>
 </body>
 </html>
