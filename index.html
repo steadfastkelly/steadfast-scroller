@@ -30,11 +30,9 @@
     background:radial-gradient(120% 100% at 50% 38%,rgba(255,255,255,.55),rgba(0,0,0,0) 60%),var(--offwhite);}
 
 
-  /* the word-field is SVG so every glyph stays razor-sharp vector geometry even when a single
-     letter is scaled up to fill the screen during the final dive */
-  .words{position:absolute;inset:0;width:100%;height:100%;z-index:3;overflow:visible;}
-  .words text{font-family:var(--font-body);fill:var(--ink);letter-spacing:.005em;
-    will-change:transform,opacity;}
+  /* the word-field is rendered on a Canvas (one element, not hundreds of DOM nodes) so it stays
+     razor-sharp at device resolution while scrolling far more smoothly than animated SVG text */
+  .words{position:absolute;inset:0;width:100%;height:100%;z-index:3;}
 
   /* work spectrum */
   .darkfill{position:absolute;inset:0;z-index:4;background:#0e1110;opacity:0;}
@@ -99,7 +97,7 @@
 
 <div class="scroll-track">
   <div class="stage" id="stage">
-    <svg class="words" id="words" aria-hidden="true"></svg>
+    <canvas class="words" id="words" aria-hidden="true"></canvas>
     <div class="darkfill" id="darkfill"></div>
     <div class="spectrum" id="spectrum"></div>
     <div class="scrollcue" id="scrollcue"></div>
@@ -153,14 +151,21 @@ const TOK=["µm","D","mmHg","%","°","Ø","ø","±","λ","Δ","≥","≤",
 "Fovea","Sclera","Uvea","Lens","Optic","Aqueous","Choroid","Drusen","Edema","Acuity","Dose","Efficacy"];
 let _ti=0; const tok=()=>TOK[(_ti++*7)%TOK.length];
 
-const DENS=(innerWidth<760)?0.6:1;
+const DENS=(innerWidth<760)?0.75:1;
 const wordsData=[];
-EYEPTS.forEach((p,i)=>{
-  if(DENS<1 && (i%5)>=3) return;                 /* ~60% density on small screens */
-  const d=p[2];
-  wordsData.push({nx:p[0],ny:p[1],d:d,ang:p[3],
+function pushWord(nx,ny,d,ang,fg){
+  wordsData.push({nx,ny,d,ang,
     weight:(d>0.62?700:(d>0.4?600:400)),
-    shade:clamp(0.5+0.62*d)});
+    shade:clamp(0.5+0.62*d), fg:!!fg});
+}
+EYEPTS.forEach((p,i)=>{
+  if(DENS<1 && (i%4)>=3) return;                 /* ~75% density on small screens */
+  const d=p[2];
+  pushWord(p[0],p[1],d,p[3]);
+  // densify the dark structural regions (brows, lashes, iris) with extra small jittered marks,
+  // so the field reads as a concentrated engraving — closer to the reference — not sparse dots
+  if(d>0.6 && (i%2===0))
+    pushWord(p[0]+(Math.random()-0.5)*0.012, p[1]+(Math.random()-0.5)*0.012, d*0.7, (Math.random()*2-1)*45, true);
 });
 
 /* ---- depth-of-field tuning (tweak to taste) ----
@@ -169,33 +174,34 @@ EYEPTS.forEach((p,i)=>{
    backFade   : how much receding glyphs dim                  (0 = no fade)
    sharp/soft : |depth| thresholds where blur tier 1 / tier 2 kick in
    blur1/blur2: the two blur radii in px (kept tiny & few for performance)     */
-const DEPTH={ scaleRange:0.26, foreFrac:0.12, backFade:0.42,
-              sharp:0.50, soft:0.78, blur1:0.7, blur2:1.4 };
+const DEPTH={ scaleRange:0.34, foreFrac:0.13, backFade:0.42,
+              sharp:0.50, soft:0.80, blur1:0.7, blur2:1.5 };
 
-const SVGNS='http://www.w3.org/2000/svg';
-const wordsEl=document.getElementById('words');
+const INK='#14140F';
+const WFONT='"Google Sans Flex","Google Sans",ui-sans-serif,system-ui,"Helvetica Neue",Arial,sans-serif';
+const wordsCv=document.getElementById('words');
+const wctx=wordsCv.getContext('2d');
+let WDPR=1;
+const wordsTier=[[],[],[]];                       // glyphs bucketed by blur tier (0 sharp, 1, 2)
 wordsData.forEach((w,i)=>{
-  const t=document.createElementNS(SVGNS,'text');
-  t.setAttribute('text-anchor','middle');
-  t.setAttribute('dominant-baseline','central');
-  t.setAttribute('font-weight',w.weight);
-  t.textContent=tok();
-  w.el=t; w.delay=((i*0.61803)%1)*0.5; w.span=0.42;
-  // per-letter scatter: random drift direction, magnitude and spin so the cluster breaks
-  // apart organically as we dive in (rather than expanding in rigid lockstep)
+  w.text=tok();
+  w.delay=((i*0.61803)%1)*0.5; w.span=0.42;
+  // per-glyph scatter for the dive
   const ja=Math.random()*PI*2;
   w.jx=Math.cos(ja); w.jy=Math.sin(ja); w.jmag=0.5+Math.random(); w.spin=(Math.random()*2-1)*120;
-  // ---- assign a depth plane ----
-  // dark, structural marks sit on the focal plane (sharp, full size); faint marks recede
-  // (smaller, dimmer, softer); a small stable subset floats forward (larger, airy, faintly soft).
+  // depth plane: dark structural marks on the focal plane (sharp); faint marks recede (smaller,
+  // dimmer, softer); a stable subset floats forward (larger, airy); densifiers sit behind.
   const hsh=(i*0.61803)%1;
-  w.z = hsh<DEPTH.foreFrac ? 0.5+(DEPTH.foreFrac-hsh)/DEPTH.foreFrac*0.5 : -(1-w.d);
+  w.z = w.fg ? -(0.4+0.5*Math.random())
+            : (hsh<DEPTH.foreFrac ? 0.5+(DEPTH.foreFrac-hsh)/DEPTH.foreFrac*0.5 : -(1-w.d));
   w.depthScale = 1 + w.z*DEPTH.scaleRange;
   w.depthOpa   = w.z<0 ? (1-DEPTH.backFade)+DEPTH.backFade*(1+w.z) : 0.9;
-  const def=Math.abs(w.z);                                 // distance from the focal plane
-  w.blurCss = def<DEPTH.sharp ? 'none' : (def<DEPTH.soft ? 'blur('+DEPTH.blur1+'px)' : 'blur('+DEPTH.blur2+'px)');
-  wordsEl.appendChild(t);
+  const def=Math.abs(w.z);
+  w.tier = def<DEPTH.sharp ? 0 : (def<DEPTH.soft ? 1 : 2);
+  wordsTier[w.tier].push(w);
 });
+// sort each tier by weight then size so the canvas font string changes as rarely as possible
+wordsTier.forEach(t=>t.sort((a,b)=>a.weight-b.weight||a.depthScale-b.depthScale));
 
 
 /* ---------- work spectrum ---------- */
@@ -230,14 +236,18 @@ function layout(){
   const eyesCY = mobile ? H*0.42 : H*0.40;
   const ox=(W-artW)/2, oy=eyesCY-artH/2;
   const cell=artW*(9/878);
+  // size the word canvas for crisp text at the device pixel ratio (capped at 2 for fill-rate)
+  M.W=W; M.H=H; WDPR=Math.min(window.devicePixelRatio||1,2);
+  wordsCv.width=Math.round(W*WDPR); wordsCv.height=Math.round(H*WDPR);
+  wordsCv.style.width=W+'px'; wordsCv.style.height=H+'px';
   wordsData.forEach(w=>{
     w.tx=ox+w.nx*artW; w.ty=oy+w.ny*artH;
-    w.fpx=cell*(0.92+0.6*w.d); w.el.setAttribute('font-size',(w.fpx*w.depthScale).toFixed(2));
+    w.fpx=cell*(0.92+0.6*w.d); w.px=w.fpx*w.depthScale;     // rest pixel size (incl. depth)
     const fromLeft=w.tx<W/2;
     w.ex=fromLeft? -W*0.05-Math.random()*W*0.12 : W*1.05+Math.random()*W*0.12;
     w.ey=clamp(w.ty+(Math.random()-0.5)*H*0.30, H*0.05, eyesCY+artH*0.55);
   });
-  M.coX=W/2; M.coY=eyesCY; M.scatterRef=artW*0.16;
+  M.coX=W/2; M.coY=eyesCY; M.scatterRef=artW*0.16; M.restDrawn=false;
 
   // ---- spectrum arch ----
   // desktop: a wide, shallow arch — big radius + small span so cards spread far
@@ -318,6 +328,44 @@ const BEAT_WIN=[
   [0.585,0.615,0.690,0.718],  // The truth is there.
   [0.726,0.756,0.798,0.822]]; // But can your audience see it?
 
+/* ---------- word-field canvas painter ----------
+   sharp=true  → one fast filter-free pass (used every frame while scrolling/diving)
+   sharp=false → three passes bucketed by blur tier (used once, when the eye settles)        */
+function drawWords(eyesT,zoomT,Z,scat,ocx,ocy,sharp){
+  wctx.setTransform(WDPR,0,0,WDPR,0,0);
+  wctx.clearRect(0,0,M.W,M.H);
+  wctx.textAlign='center'; wctx.textBaseline='middle'; wctx.fillStyle=INK;
+  const groups = sharp ? [wordsData] : wordsTier;
+  for(let g=0; g<groups.length; g++){
+    wctx.filter = (sharp||g===0) ? 'none' : (g===1 ? 'blur('+DEPTH.blur1+'px)' : 'blur('+DEPTH.blur2+'px)');
+    let lastFont='';
+    for(const w of groups[g]){
+      const a=smooth(clamp((eyesT-w.delay)/w.span));
+      if(a<=0.001) continue;
+      let x=lerp(w.ex,w.tx,a), y=lerp(w.ey,w.ty,a), sc=lerp(0.7,1,a), rot=w.ang;
+      if(zoomT>0){
+        const dxh=w.tx-M.heroX, dyh=w.ty-M.heroY;
+        const edge=clamp(Math.hypot(dxh,dyh)/M.scatterRef);   // the central anchor letter barely scatters
+        x=ocx+dxh*Z+w.jx*w.jmag*edge*scat*200;
+        y=ocy+dyh*Z+w.jy*w.jmag*edge*scat*200;
+        sc=sc*Z; rot=w.ang+w.spin*scat;
+      }
+      if(x<-120||x>M.W+120||y<-120||y>M.H+120) continue;      // cull off-screen glyphs (cheap dive)
+      const px=Math.max(1,Math.round(w.px*sc));
+      const f=w.weight+' '+px+'px '+WFONT;
+      if(f!==lastFont){ wctx.font=f; lastFont=f; }
+      wctx.globalAlpha=clamp(w.shade*w.depthOpa*clamp(a*1.9));
+      if(rot){
+        const r=rot*PI/180, c=Math.cos(r), s=Math.sin(r);
+        wctx.setTransform(WDPR*c,WDPR*s,-WDPR*s,WDPR*c,WDPR*x,WDPR*y);
+        wctx.fillText(w.text,0,0);
+        wctx.setTransform(WDPR,0,0,WDPR,0,0);
+      } else wctx.fillText(w.text,x,y);
+    }
+  }
+  wctx.filter='none'; wctx.globalAlpha=1;
+}
+
 /* ---------- render ---------- */
 function render(p,dt){
   progress.style.width=(p*100).toFixed(2)+'%';
@@ -325,11 +373,6 @@ function render(p,dt){
 
   const eyesT=smooth(clamp((p-0.06)/0.68));   // eyes assemble continuously — never pause with the copy
   const zoomT=smooth(pw(p,KF_ZOOM));
-  // depth blur is a static, per-plane filter — on while the eye assembles/rests, dropped during
-  // the dive (a blur on a 180x-scaled glyph would smear). Toggled only on the zoom transition,
-  // never per-frame, so hundreds of filtered glyphs stay cheap.
-  const wantBlur = zoomT===0;
-  if(wantBlur!==M.blurOn){ M.blurOn=wantBlur; for(const w of wordsData) w.el.style.filter = wantBlur ? w.blurCss : 'none'; }
   // the fan holds for half a second after the letter has filled the frame, then sweeps in
   // (time-gated, not scroll-gated, so the pause is a real beat regardless of scroll speed)
   if(zoomT>=0.98) M.hold=(M.hold||0)+(dt||0); else M.hold=0;
@@ -337,28 +380,22 @@ function render(p,dt){
   const auto=clamp((M.hold-0.5)/0.9);
   const bloomT=smooth(clamp(Math.max(pw(p,KF_BLOOM)*gate, auto)));
 
-  // The whole word-field dives toward the anchor letter at the centre of the right eye. Every
-  // glyph is SVG, so scaling stays razor-sharp; as we dive, the cluster scatters apart (outer
-  // letters fling away while the central one swells to fill the frame).
-  // The word-field dives into the letter nearest the right-eye centre. The dive origin travels
-  // to mid-screen so that anchor letter ends up centred and swells (razor-sharp SVG) until its
-  // solid ink fills the frame; every other letter flings outward and tumbles off past the lens.
+  // ---- word-field (Canvas) ----
+  // Razor-sharp & filter-free while moving (fast); when the eye SETTLES, repaint a single frame
+  // WITH the depth-of-field blur tiers — so blur cost is paid once on settle, not per scroll
+  // frame. Past the dive the words sit under the dark canvas, so skip painting them entirely.
   const Z=1+Math.pow(zoomT,3)*180;
   const scat=Math.pow(zoomT,2);
-  const ocx=lerp(M.heroX, innerWidth/2, zoomT), ocy=lerp(M.heroY, innerHeight/2, zoomT);
-  for(const w of wordsData){
-    const a=smooth(clamp((eyesT-w.delay)/w.span));
-    let x=lerp(w.ex,w.tx,a), y=lerp(w.ey,w.ty,a), sc=lerp(0.7,1,a), rot=w.ang;
-    if(zoomT>0){
-      const dxh=w.tx-M.heroX, dyh=w.ty-M.heroY;
-      const edge=clamp(Math.hypot(dxh,dyh)/M.scatterRef);   // the central anchor letter barely scatters
-      x = ocx + dxh*Z + w.jx*w.jmag*edge*scat*200;
-      y = ocy + dyh*Z + w.jy*w.jmag*edge*scat*200;
-      sc = sc*Z; rot = w.ang + w.spin*scat;
-    }
-    w.el.setAttribute('opacity',(w.shade*w.depthOpa*clamp(a*1.9)).toFixed(3));
-    w.el.setAttribute('transform',`translate(${x.toFixed(1)},${y.toFixed(1)}) rotate(${rot.toFixed(1)}) scale(${Math.max(.02,sc).toFixed(3)})`);
+  const ocx=lerp(M.heroX, M.W/2, zoomT), ocy=lerp(M.heroY, M.H/2, zoomT);
+  const moved=Math.abs(p-(M.lastWP==null?-1:M.lastWP))>0.0002;
+  if(p>=0.87){
+    if(!M.wordsHidden){ wctx.setTransform(1,0,0,1,0,0); wctx.clearRect(0,0,wordsCv.width,wordsCv.height); M.wordsHidden=true; }
+  } else {
+    M.wordsHidden=false;
+    if(moved||zoomT>0){ drawWords(eyesT,zoomT,Z,scat,ocx,ocy,true); M.restDrawn=false; }   // sharp while moving/diving
+    else if(!M.restDrawn){ drawWords(eyesT,zoomT,Z,scat,ocx,ocy,false); M.restDrawn=true; } // focus-in once on settle
   }
+  M.lastWP=p;
   // No off-white→black wash: the dark letter filling the frame IS the background. A solid canvas
   // only snaps in (instantly, no fade) once the letter already covers the screen, purely to back
   // the payoff copy and the fan that follow.
