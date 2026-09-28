@@ -1,0 +1,21 @@
+<!-- @dsCard group="Governance" height=300 -->
+<!doctype html>
+<html lang="en">
+<head><meta charset="utf-8"><title>preview</title></head>
+<body>
+<div id="root" style="padding:24px"></div>
+<script>
+  var H = window.Handrail, h = React.createElement;
+  ReactDOM.createRoot(document.getElementById('root')).render(h(H.RaciTable, {
+    caption: 'Client offboarding',
+    roles: ['Account lead', 'Project manager', 'Finance', 'Ops'],
+    rows: [
+      { task: 'Tell the client the end date', cells: { 'Account lead': 'A', 'Project manager': 'R', 'Ops': 'I' } },
+      { task: 'Send the final invoice', cells: { 'Account lead': 'C', 'Finance': 'A' } },
+      { task: 'Archive files and revoke access', cells: { 'Project manager': 'C', 'Ops': 'A' } },
+      { task: 'Run the close-out review', cells: { 'Account lead': 'A', 'Project manager': 'R', 'Finance': 'C', 'Ops': 'C' } }
+    ]
+  }));
+</script>
+</body>
+</html>

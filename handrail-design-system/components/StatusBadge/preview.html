@@ -1,0 +1,17 @@
+<!-- @dsCard group="Governance" height=64 -->
+<!doctype html>
+<html lang="en">
+<head><meta charset="utf-8"><title>preview</title></head>
+<body>
+<div id="root" style="padding:24px"></div>
+<script>
+  var H = window.Handrail, h = React.createElement;
+  ReactDOM.createRoot(document.getElementById('root')).render(h('div', { style: { display: 'flex', flexWrap: 'wrap', gap: '12px' } },
+    h(H.StatusBadge, { status: 'approved' }),
+    h(H.StatusBadge, { status: 'review' }),
+    h(H.StatusBadge, { status: 'draft' }),
+    h(H.StatusBadge, { status: 'overdue' }),
+    h(H.StatusBadge, { status: 'retired' })));
+</script>
+</body>
+</html>

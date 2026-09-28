@@ -1,0 +1,15 @@
+<!-- @dsCard group="Navigation" height=420 -->
+<!doctype html>
+<html lang="en">
+<head><meta charset="utf-8"><title>preview</title></head>
+<body>
+<div id="root" style="padding:24px"></div>
+<script>
+  var H = window.Handrail, h = React.createElement;
+  ReactDOM.createRoot(document.getElementById('root')).render(h('div', { style: { maxWidth: '272px' } }, h(H.DocNav, { sections: [
+    { title: 'People Ops', items: [ { label: 'Paid time off', active: true }, { label: 'Sick leave' }, { label: 'Remote work', status: 'review' }, { label: 'Expenses', status: 'overdue' } ] },
+    { title: 'Client work', items: [ { label: 'Kickoff checklist' }, { label: 'Client offboarding' }, { label: 'Scope changes', status: 'draft' } ] }
+  ] })));
+</script>
+</body>
+</html>

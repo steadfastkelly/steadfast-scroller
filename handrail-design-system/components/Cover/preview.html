@@ -1,0 +1,52 @@
+<!-- @dsCard height=288 -->
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Handrail</title>
+<style>
+  html, body { margin:0; height:100%; }
+  body { background:var(--paper); color:var(--ink); font-family:var(--font-sans); overflow:hidden; }
+  .cover { position:relative; height:288px; overflow:hidden; }
+  .art { position:absolute; top:0; left:480px; width:480px; height:288px; overflow:hidden; }
+  .art svg { display:block; width:480px; height:288px; }
+  .railf { fill:var(--rail); }
+  .steelf { fill:var(--steel); }
+  .apprf { fill:var(--approved); }
+  .softf { fill:var(--rail-soft); }
+  .onrail { fill:var(--on-rail); }
+  .bar { fill:var(--rail); }
+  .words { position:absolute; left:48px; right:48px; bottom:48px; max-width:440px; }
+  .name { margin:0; font-size:88px; line-height:.92; font-weight:600; letter-spacing:-.03em; color:var(--ink); }
+  .tag { margin:12px 0 0 4px; font-size:14px; line-height:20px; color:var(--ink-muted); }
+</style>
+</head>
+<body>
+<div class="cover">
+<div class="art" aria-hidden="true">
+<svg viewBox="0 0 480 288" width="480" height="288">
+<!--
+  blocks      rail 176x288 slab bled off top and bottom (the identity color, biggest) · steel 232x192 bleeding off the right edge · approved 64x32 once (it only ever means a trusted page) · rail-soft 96x32 (the highlighter tint) · about 35% of 960x288
+  arrangement one tall rail slab with a steel block beside it, bottoms flush at space-12 above the edge, space-4 gutters, two small satellites above the steel
+  pattern     a literal motif: handrails. Three space-2-tall rails (radius-pill ends) at a space-8 pitch, run across both blocks, on-rail over the yellow and rail over the steel
+  scales      sides in space-4 and space-8 multiples; gutter space-4; pitch space-8; corners radius-0 on blocks (a square system), radius-pill on rails
+-->
+<rect class="railf" x="24" y="0" width="176" height="288"/>
+<rect class="apprf" x="216" y="16" width="64" height="32"/>
+<rect class="softf" x="296" y="16" width="96" height="32"/>
+<rect class="steelf" x="216" y="64" width="264" height="176"/>
+<rect class="onrail" x="48" y="112" width="136" height="8" rx="4"/>
+<rect class="onrail" x="48" y="144" width="136" height="8" rx="4"/>
+<rect class="onrail" x="48" y="176" width="136" height="8" rx="4"/>
+<rect class="bar" x="232" y="112" width="264" height="8" rx="4"/>
+<rect class="bar" x="232" y="144" width="264" height="8" rx="4"/>
+<rect class="bar" x="232" y="176" width="264" height="8" rx="4"/>
+</svg>
+</div>
+<div class="words">
+<h1 class="name">Handrail</h1>
+<p class="tag">The operations handbook people actually open.</p>
+</div>
+</div>
+</body>
+</html>

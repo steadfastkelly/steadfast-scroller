@@ -1,0 +1,68 @@
+<!-- @dsCard group="Pages" height=1000 width=1280 page="true" subtitle="The app shell: nav rail, reading sheet, on-page contents" -->
+<!doctype html>
+<html lang="en">
+<head><meta charset="utf-8"><title>Handbook page</title>
+<style>
+  .shell { display: grid; grid-template-columns: minmax(0, 1fr); max-width: var(--page-max); margin: 0 auto; }
+  .rail { display: none; }
+  .sheet { background: var(--surface); padding: var(--space-12) var(--space-4) var(--space-16); min-width: 0; }
+  .toc { display: none; }
+  .stack { display: grid; gap: var(--space-12); max-width: var(--measure); }
+  .sec { display: grid; gap: var(--space-6); }
+  .sec h2 { font-family: var(--font-sans); font-size: 28px; line-height: 34px; font-weight: 600; letter-spacing: -.01em; margin: 0; }
+  .sec p { margin: 0; }
+  .topbar { display: flex; gap: var(--space-4); align-items: center; padding: var(--space-3) var(--space-4); border-bottom: 1px solid var(--line); background: var(--paper); }
+  .wordmark { font-family: var(--font-sans); font-weight: 700; font-size: 18px; letter-spacing: -.02em; }
+  .topbar .hr-search { flex: 1; }
+  .toc ol { list-style: none; margin: var(--space-3) 0 0; padding: 0; display: grid; gap: var(--space-2); font-family: var(--font-sans); font-size: 13px; line-height: 18px; }
+  .toc a { color: var(--ink-muted); text-decoration: none; }
+  .toc a.on { color: var(--ink); font-weight: 600; }
+  @media (min-width: 768px) { .sheet { padding-inline: var(--space-6); } }
+  @media (min-width: 1080px) {
+    .topbar { display: none; }
+    .shell { grid-template-columns: var(--nav-width) minmax(0, 1fr); }
+    .rail { display: flex; flex-direction: column; gap: var(--space-8); padding: var(--space-6) var(--space-4); border-right: 1px solid var(--line); }
+    .sheet { padding-inline: var(--space-12); }
+  }
+  @media (min-width: 1280px) {
+    .shell { grid-template-columns: var(--nav-width) minmax(0, 1fr) var(--toc-width); }
+    .toc { display: block; padding: var(--space-16) var(--space-6); background: var(--surface); }
+  }
+</style>
+</head>
+<body>
+<div id="root"></div>
+<script>
+  var H = window.Handrail, h = React.createElement;
+  var nav = [
+    { title: 'People Ops', items: [ { label: 'Paid time off', active: true }, { label: 'Sick leave' }, { label: 'Remote work', status: 'review' }, { label: 'Expenses', status: 'overdue' } ] },
+    { title: 'Client work', items: [ { label: 'Kickoff checklist' }, { label: 'Client offboarding' }, { label: 'Scope changes', status: 'draft' } ] },
+    { title: 'Governance', items: [ { label: 'Decision rights' }, { label: 'Policy review cycle' } ] }
+  ];
+  ReactDOM.createRoot(document.getElementById('root')).render(
+    h(React.Fragment, null,
+      h('div', { className: 'topbar' }, h('span', { className: 'wordmark' }, 'Handrail'), h(H.SearchField, { placeholder: 'Search' })),
+      h('div', { className: 'shell' },
+        h('aside', { className: 'rail' }, h('span', { className: 'wordmark' }, 'Handrail'), h(H.SearchField, { shortcut: '/' }), h(H.DocNav, { sections: nav })),
+        h('main', { className: 'sheet' },
+          h('div', { className: 'stack' },
+            h(H.GovernanceHeader, { section: 'People Ops', title: 'Paid time off', summary: 'How much time off you get, how to ask for it, and who says yes.', owner: 'Dana Whitfield', status: 'approved', reviewed: '12 Sep 2026', nextReview: '12 Mar 2027', version: 'v4.2' }),
+            h('section', { className: 'sec', id: 'allowance' },
+              h('h2', null, 'How much you get'),
+              h('p', null, 'Everyone gets 25 days a year plus public holidays. Your balance resets on 1 January and up to five unused days carry over.'),
+              h(H.Callout, { kind: 'required', title: 'Book at least ten working days ahead' }, h('p', null, 'Requests with less notice go to the account lead, not your manager.'))),
+            h('section', { className: 'sec', id: 'request' },
+              h('h2', null, 'How to ask'),
+              h(H.ProcessSteps, { steps: [
+                { title: 'Send the request in the PTO form', owner: 'Employee', body: 'Pick your dates and add who covers your clients.' },
+                { title: 'Manager reviews coverage', owner: 'Direct manager', current: true, decision: { if: 'it overlaps a client launch', goTo: 'step 3', target: 'esc' } },
+                { id: 'esc', title: 'Escalate to the account lead', owner: 'Account lead', body: 'They decide within two working days.' }
+              ] })))),
+        h('aside', { className: 'toc' },
+          h('p', { className: 'hr-label' }, 'On this page'),
+          h('ol', null,
+            h('li', null, h('a', { href: '#allowance', className: 'on' }, 'How much you get')),
+            h('li', null, h('a', { href: '#request' }, 'How to ask')))))));
+</script>
+</body>
+</html>
