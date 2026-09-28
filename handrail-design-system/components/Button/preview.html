@@ -1,17 +1,20 @@
-<!-- @dsCard group="Actions" height=88 -->
+<!-- @dsCard group="Actions" height=170 -->
 <!doctype html>
 <html lang="en">
 <head><meta charset="utf-8"><title>preview</title></head>
 <body>
-<div id="root" style="padding:24px"></div>
+<div id="root" style="padding:20px"></div>
 <script>
   var H = window.Handrail, h = React.createElement;
-  ReactDOM.createRoot(document.getElementById('root')).render(h('div', { style: { display: 'flex', flexWrap: 'wrap', gap: '12px', alignItems: 'center' } },
-    h(H.Button, { variant: 'primary' }, 'Submit for approval'),
-    h(H.Button, null, 'Save draft'),
-    h(H.Button, { variant: 'quiet' }, 'View history'),
-    h(H.Button, { variant: 'danger', size: 'sm' }, 'Retire policy'),
-    h(H.Button, { disabled: true }, 'Publish')));
+  ReactDOM.createRoot(document.getElementById('root')).render(h('div', { style: { display: 'grid', gap: '4px' } },
+    h('div', { className: 'hr-tile', style: { display: 'flex', flexWrap: 'wrap', gap: '8px', alignItems: 'center' } },
+      h(H.Button, { variant: 'primary' }, 'Submit for approval'),
+      h(H.Button, null, 'Save draft'),
+      h(H.Button, { variant: 'quiet' }, 'View history'),
+      h(H.Button, { variant: 'danger', size: 'sm' }, 'Retire policy'),
+      h(H.Button, { disabled: true }, 'Publish')),
+    h('div', { className: 'hr-tile', style: { background: 'var(--panel)', display: 'flex', gap: '8px' } },
+      h(H.Button, { variant: 'inverse' }, 'Get started'))));
 </script>
 </body>
 </html>

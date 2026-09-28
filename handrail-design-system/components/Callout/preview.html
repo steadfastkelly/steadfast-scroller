@@ -1,14 +1,14 @@
-<!-- @dsCard group="Content" height=420 -->
+<!-- @dsCard group="Content" height=470 -->
 <!doctype html>
 <html lang="en">
 <head><meta charset="utf-8"><title>preview</title></head>
 <body>
-<div id="root" style="padding:24px"></div>
+<div id="root" style="padding:20px"></div>
 <script>
   var H = window.Handrail, h = React.createElement;
-  ReactDOM.createRoot(document.getElementById('root')).render(h('div', { style: { display: 'grid', gap: '24px' } },
-    h(H.Callout, { kind: 'required', title: 'Book time off at least ten working days ahead' }, h('p', null, 'Requests with less notice go to the account lead, not your manager.')),
-    h(H.Callout, { kind: 'recommended', title: 'Tell your clients a week before' }, h('p', null, 'A short note with who covers you saves a lot of chasing.')),
+  ReactDOM.createRoot(document.getElementById('root')).render(h('div', { style: { display: 'grid', gap: '4px' } },
+    h(H.Callout, { kind: 'required', title: 'Book time off at least ten working days ahead.' }, h('p', null, 'Requests with less notice go to the account lead, not your manager.')),
+    h(H.Callout, { kind: 'recommended', title: 'Tell your clients a week before.' }, h('p', null, 'A short note with who covers you saves a lot of chasing.')),
     h(H.Callout, { kind: 'note' }, h('p', null, 'Public holidays don\u2019t count against your balance.'))));
 </script>
 </body>

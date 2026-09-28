@@ -3,11 +3,14 @@ import type * as React from 'react';
 export type Status = 'draft' | 'review' | 'approved' | 'overdue' | 'retired';
 
 export interface ButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElement> {
-  /** primary = the one main action on a screen (rail fill). secondary = default outline. quiet = no border. danger = destructive. */
-  variant?: 'primary' | 'secondary' | 'quiet' | 'danger';
+  /** primary = ink pill, the main action. secondary = outline pill. quiet = no border. danger = destructive. inverse = white pill on a dark panel. */
+  variant?: 'primary' | 'secondary' | 'quiet' | 'danger' | 'inverse';
   size?: 'md' | 'sm';
 }
 export declare function Button(props: ButtonProps): React.ReactElement;
+
+export interface EyebrowProps { children: React.ReactNode; /** A real count, shown as (04). */ count?: number; className?: string }
+export declare function Eyebrow(props: EyebrowProps): React.ReactElement;
 
 export interface StatusBadgeProps { status?: Status; /** Overrides the default label. */ children?: React.ReactNode; className?: string }
 export declare function StatusBadge(props: StatusBadgeProps): React.ReactElement;
@@ -62,6 +65,6 @@ export declare function DocNav(props: DocNavProps): React.ReactElement;
 
 declare global {
   interface Window {
-    Handrail: { Button: typeof Button; StatusBadge: typeof StatusBadge; GovernanceHeader: typeof GovernanceHeader; ProcessSteps: typeof ProcessSteps; Callout: typeof Callout; RaciTable: typeof RaciTable; SearchField: typeof SearchField; DocNav: typeof DocNav };
+    Handrail: { Button: typeof Button; Eyebrow: typeof Eyebrow; StatusBadge: typeof StatusBadge; GovernanceHeader: typeof GovernanceHeader; ProcessSteps: typeof ProcessSteps; Callout: typeof Callout; RaciTable: typeof RaciTable; SearchField: typeof SearchField; DocNav: typeof DocNav };
   }
 }

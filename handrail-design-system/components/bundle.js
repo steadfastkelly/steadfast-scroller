@@ -1,4 +1,4 @@
-/* @ds-bundle: {"format":4,"namespace":"Handrail","components":[{"name":"Button"},{"name":"StatusBadge"},{"name":"GovernanceHeader"},{"name":"ProcessSteps"},{"name":"Callout"},{"name":"RaciTable"},{"name":"SearchField"},{"name":"DocNav"}]} */
+/* @ds-bundle: {"format":4,"namespace":"Handrail","components":[{"name":"Button"},{"name":"Eyebrow"},{"name":"StatusBadge"},{"name":"GovernanceHeader"},{"name":"ProcessSteps"},{"name":"Callout"},{"name":"RaciTable"},{"name":"SearchField"},{"name":"DocNav"}]} */
 (function () {
   var React = window.React;
   var h = React.createElement;
@@ -15,6 +15,13 @@
     return h("button", rest, p.children);
   }
 
+  function Eyebrow(p) {
+    return h("p", { className: cx("hr-eyebrow", p.className) },
+      h("span", { className: "hr-eyebrow__dot", "aria-hidden": "true" }),
+      h("span", null, p.children),
+      p.count != null ? h("span", { className: "hr-counter" }, "(" + String(p.count).padStart(2, "0") + ")") : null);
+  }
+
   function StatusBadge(p) {
     var s = p.status || "draft";
     return h("span", { className: cx("hr-badge", "hr-badge--" + s, p.className) },
@@ -24,7 +31,7 @@
 
   function Meta(label, value, mono) {
     return h("div", { className: "hr-gov__item", key: label },
-      h("dt", { className: "hr-label" }, label),
+      h("dt", { className: "hr-gov__key" }, label),
       h("dd", { className: mono ? "hr-meta" : "hr-gov__val" }, value));
   }
 
@@ -36,9 +43,10 @@
     if (p.nextReview) items.push(Meta("Next review", p.nextReview, true));
     if (p.version) items.push(Meta("Version", p.version, true));
     return h("header", { className: cx("hr-gov", p.className) },
-      p.section ? h("p", { className: "hr-label hr-gov__section" }, p.section) : null,
-      h("h1", { className: "hr-gov__title" }, p.title),
-      p.summary ? h("p", { className: "hr-gov__summary" }, p.summary) : null,
+      h("div", { className: "hr-gov__main" },
+        p.section ? h(Eyebrow, { className: "hr-gov__section" }, p.section) : null,
+        h("h1", { className: "hr-gov__title" }, p.title),
+        p.summary ? h("p", { className: "hr-gov__summary" }, p.summary) : null),
       h("dl", { className: "hr-gov__meta" }, items));
   }
 
@@ -46,10 +54,10 @@
     var steps = p.steps || [];
     return h("ol", { className: cx("hr-steps", p.className) }, steps.map(function (s, i) {
       return h("li", { className: cx("hr-step", s.current && "is-current"), key: i, id: s.id },
-        h("span", { className: "hr-step__num", "aria-hidden": "true" }, String(i + 1).padStart(2, "0")),
+        h("span", { className: "hr-step__num", "aria-hidden": "true" }, "(" + String(i + 1).padStart(2, "0") + ")"),
         h("div", { className: "hr-step__body" },
           h("h3", { className: "hr-step__title" }, s.title),
-          s.owner ? h("p", { className: "hr-step__owner" }, h("span", { className: "hr-label" }, "Owner"), " ", s.owner) : null,
+          s.owner ? h("p", { className: "hr-step__owner" }, h("span", { className: "hr-pill" }, s.owner)) : null,
           s.body ? h("p", { className: "hr-step__text" }, s.body) : null,
           s.decision ? h("p", { className: "hr-step__decision" },
             h("span", { "aria-hidden": "true" }, "↳ "), "If ", s.decision["if"], ", go to ",
@@ -62,7 +70,7 @@
     var kind = p.kind || "note";
     return h("aside", { className: cx("hr-callout", "hr-callout--" + kind, p.className) },
       h("p", { className: "hr-callout__head" },
-        h("span", { className: "hr-callout__tag hr-label" }, CALLOUT_LABEL[kind]),
+        h("span", { className: "hr-callout__tag" }, CALLOUT_LABEL[kind]),
         p.title ? h("span", { className: "hr-callout__title" }, p.title) : null),
       h("div", { className: "hr-callout__body" }, p.children));
   }
@@ -105,7 +113,7 @@
     return h("nav", { className: cx("hr-nav", p.className), "aria-label": p.label || "Handbook" },
       sections.map(function (s, i) {
         return h("div", { className: "hr-nav__group", key: i },
-          h("p", { className: "hr-label hr-nav__title" }, s.title),
+          h(Eyebrow, { className: "hr-nav__title", count: (s.items || []).length }, s.title),
           h("ul", { className: "hr-nav__list" }, (s.items || []).map(function (it, j) {
             return h("li", { key: j },
               h("a", { href: it.href || "#", className: cx("hr-nav__item", it.active && "is-active"), "aria-current": it.active ? "page" : undefined },
@@ -116,7 +124,7 @@
   }
 
   window.Handrail = Object.assign(window.Handrail || {}, {
-    Button: Button, StatusBadge: StatusBadge, GovernanceHeader: GovernanceHeader, ProcessSteps: ProcessSteps,
+    Button: Button, Eyebrow: Eyebrow, StatusBadge: StatusBadge, GovernanceHeader: GovernanceHeader, ProcessSteps: ProcessSteps,
     Callout: Callout, RaciTable: RaciTable, SearchField: SearchField, DocNav: DocNav
   });
 })();

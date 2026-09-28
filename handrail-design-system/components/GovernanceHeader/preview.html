@@ -1,15 +1,15 @@
-<!-- @dsCard group="Governance" height=300 -->
+<!-- @dsCard group="Governance" height=400 -->
 <!doctype html>
 <html lang="en">
 <head><meta charset="utf-8"><title>preview</title></head>
 <body>
-<div id="root" style="padding:24px"></div>
+<div id="root" style="padding:20px"></div>
 <script>
   var H = window.Handrail, h = React.createElement;
   ReactDOM.createRoot(document.getElementById('root')).render(h(H.GovernanceHeader, {
     section: 'People Ops',
-    title: 'Paid time off',
-    summary: 'How much time off you get, how to ask for it, and who says yes.',
+    title: 'Paid time off.',
+    summary: [h('span', { key: 1, style: { color: 'var(--ink)' } }, 'How much time off you get,'), ' how to ask for it, and who says yes.'],
     owner: 'Dana Whitfield',
     status: 'approved',
     reviewed: '12 Sep 2026',

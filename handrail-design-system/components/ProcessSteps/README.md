@@ -1,10 +1,11 @@
 # ProcessSteps
 
-A numbered process with an owner on every step and branches written as plain sentences.
+A numbered process laid out like a services list: counter on the left, hairline between rows, an owner pill on every step.
 
-**The consumer provides** `steps`: each has a `title` (starts with a verb), an `owner` (a role, not a person, so the page survives turnover), an optional `body`, an optional `decision` (`if`, `goTo`, `target` id) and `current` for the step a reader is on.
+**The consumer provides** `steps`, each with a `title` (starts with a verb), an `owner` (a role, not a person), optional `body`, optional `decision` (`if`, `goTo`, `target`) and `current`.
 
-- The numbers are real order. Only use this component when order matters. For a list of rules, use a normal list.
-- Step numbers are `meta` in a `line-strong` box, two digits (`01`). The current step fills with `rail`.
-- Write decisions as "If it overlaps a client launch, go to step 4". Never draw a flowchart for fewer than eight steps.
+- The counters `(01)` are real order. Use this only when order matters.
+- The current step's counter sits on a `rail` pill. That is the only place `rail` fills anything.
+- Write branches as a sentence: "If it overlaps a client launch, go to step 4."
 - Keep a process under ten steps. More than that is two processes.
+- On phones the counter moves above the title.

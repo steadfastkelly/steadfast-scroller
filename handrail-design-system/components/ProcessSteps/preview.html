@@ -1,17 +1,17 @@
-<!-- @dsCard group="Content" height=470 -->
+<!-- @dsCard group="Content" height=560 -->
 <!doctype html>
 <html lang="en">
 <head><meta charset="utf-8"><title>preview</title></head>
 <body>
-<div id="root" style="padding:24px"></div>
+<div id="root" style="padding:20px"></div>
 <script>
   var H = window.Handrail, h = React.createElement;
-  ReactDOM.createRoot(document.getElementById('root')).render(h(H.ProcessSteps, { steps: [
+  ReactDOM.createRoot(document.getElementById('root')).render(h('div', { className: 'hr-tile' }, h(H.ProcessSteps, { steps: [
     { title: 'Send the request in the PTO form', owner: 'Employee', body: 'Pick your dates and add who covers your clients. Do it at least ten working days ahead.' },
     { title: 'Manager reviews coverage', owner: 'Direct manager', current: true, body: 'Check the team calendar for overlaps and confirm the cover person has agreed.', decision: { if: 'it overlaps a client launch', goTo: 'step 4', target: 'escalate' } },
-    { title: 'Approve in the HR system', owner: 'Direct manager', body: 'Approval updates the calendar and your balance automatically.' },
+    { title: 'Approve in the HR system', owner: 'Direct manager', body: 'Approval updates the calendar and your balance.' },
     { id: 'escalate', title: 'Escalate to the account lead', owner: 'Account lead', body: 'They decide within two working days and tell both of you.' }
-  ] }));
+  ] })));
 </script>
 </body>
 </html>

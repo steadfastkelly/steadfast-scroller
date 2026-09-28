@@ -1,32 +1,36 @@
-<!-- @dsCard group="Pages" height=1000 width=1280 page="true" subtitle="The app shell: nav rail, reading sheet, on-page contents" -->
+<!-- @dsCard group="Pages" height=1100 width=1440 page="true" subtitle="The app shell: tiles on the ground, 4px apart" -->
 <!doctype html>
 <html lang="en">
 <head><meta charset="utf-8"><title>Handbook page</title>
 <style>
-  .shell { display: grid; grid-template-columns: minmax(0, 1fr); max-width: var(--page-max); margin: 0 auto; }
-  .rail { display: none; }
-  .sheet { background: var(--surface); padding: var(--space-12) var(--space-4) var(--space-16); min-width: 0; }
+  .topbar { position: sticky; top: 0; z-index: 2; display: flex; gap: var(--space-4); align-items: center; justify-content: space-between; padding: var(--space-3) var(--space-5); background: color-mix(in srgb, var(--paper) 80%, transparent); -webkit-backdrop-filter: blur(var(--nav-blur)); backdrop-filter: blur(var(--nav-blur)); }
+  .wordmark { font-weight: 700; font-size: 20px; letter-spacing: -.05em; color: var(--ink); }
+  .shell { display: grid; grid-template-columns: minmax(0, 1fr); gap: var(--tile-gap); max-width: var(--page-max); margin: 0 auto; padding: 0 var(--space-5) var(--space-5); }
+  .navtile { display: none; }
+  .col { display: grid; gap: var(--tile-gap); align-content: start; min-width: 0; }
   .toc { display: none; }
-  .stack { display: grid; gap: var(--space-12); max-width: var(--measure); }
-  .sec { display: grid; gap: var(--space-6); }
-  .sec h2 { font-family: var(--font-sans); font-size: 28px; line-height: 34px; font-weight: 600; letter-spacing: -.01em; margin: 0; }
-  .sec p { margin: 0; }
-  .topbar { display: flex; gap: var(--space-4); align-items: center; padding: var(--space-3) var(--space-4); border-bottom: 1px solid var(--line); background: var(--paper); }
-  .wordmark { font-family: var(--font-sans); font-weight: 700; font-size: 18px; letter-spacing: -.02em; }
-  .topbar .hr-search { flex: 1; }
-  .toc ol { list-style: none; margin: var(--space-3) 0 0; padding: 0; display: grid; gap: var(--space-2); font-family: var(--font-sans); font-size: 13px; line-height: 18px; }
+  .sec { display: grid; grid-template-columns: minmax(0, 1fr); gap: var(--space-6); padding-block: var(--space-6); }
+  .sec + .sec { border-top: 1px solid var(--line); }
+  .sec > .hr-eyebrow { align-self: start; padding-top: 10px; }
+  .sec h2 { font-size: 26px; line-height: 1.1; font-weight: 600; letter-spacing: -.04em; margin: 0; }
+  .sec p { margin: 0; max-width: var(--measure); }
+  .sec-body { display: grid; gap: var(--space-6); min-width: 0; }
+  .toc ol { list-style: none; margin: var(--space-4) 0 0; padding: 0; display: grid; gap: var(--space-2); font-size: 13px; line-height: 1.3; letter-spacing: -.02em; }
   .toc a { color: var(--ink-muted); text-decoration: none; }
-  .toc a.on { color: var(--ink); font-weight: 600; }
-  @media (min-width: 768px) { .sheet { padding-inline: var(--space-6); } }
-  @media (min-width: 1080px) {
-    .topbar { display: none; }
-    .shell { grid-template-columns: var(--nav-width) minmax(0, 1fr); }
-    .rail { display: flex; flex-direction: column; gap: var(--space-8); padding: var(--space-6) var(--space-4); border-right: 1px solid var(--line); }
-    .sheet { padding-inline: var(--space-12); }
+  .toc a.on { color: var(--ink); }
+  .menu { height: 36px; padding: 0 16px; border-radius: var(--radius-pill); border: 0; background: var(--ink); color: var(--on-ink); font: 500 13px var(--font-sans); }
+  @media (min-width: 810px) {
+    .topbar { padding-inline: var(--space-7); } .shell { padding: 0 var(--space-7) var(--space-7); }
+    .sec { grid-template-columns: 180px minmax(0, 1fr); } .sec h2 { font-size: 32px; }
   }
-  @media (min-width: 1280px) {
+  @media (min-width: 1200px) {
+    .topbar { display: none; }
+    .shell { grid-template-columns: var(--nav-width) minmax(0, 1fr); padding: var(--space-9); }
+    .navtile { display: flex; flex-direction: column; gap: var(--space-7); position: sticky; top: var(--space-9); align-self: start; background: var(--surface); border-radius: var(--radius-md); padding: var(--space-5); }
+  }
+  @media (min-width: 1440px) {
     .shell { grid-template-columns: var(--nav-width) minmax(0, 1fr) var(--toc-width); }
-    .toc { display: block; padding: var(--space-16) var(--space-6); background: var(--surface); }
+    .toc { display: block; position: sticky; top: var(--space-9); align-self: start; background: var(--surface); border-radius: var(--radius-md); padding: var(--space-5); }
   }
 </style>
 </head>
@@ -39,27 +43,27 @@
     { title: 'Client work', items: [ { label: 'Kickoff checklist' }, { label: 'Client offboarding' }, { label: 'Scope changes', status: 'draft' } ] },
     { title: 'Governance', items: [ { label: 'Decision rights' }, { label: 'Policy review cycle' } ] }
   ];
+  function Sec(id, eyebrow, title, kids) {
+    return h('section', { className: 'sec', id: id }, h(H.Eyebrow, null, eyebrow), h('div', { className: 'sec-body' }, h('h2', null, title), kids));
+  }
   ReactDOM.createRoot(document.getElementById('root')).render(
     h(React.Fragment, null,
-      h('div', { className: 'topbar' }, h('span', { className: 'wordmark' }, 'Handrail'), h(H.SearchField, { placeholder: 'Search' })),
+      h('div', { className: 'topbar' }, h('span', { className: 'wordmark' }, 'Handrail'), h('button', { className: 'menu', type: 'button', 'aria-label': 'Open menu' }, 'Menu')),
       h('div', { className: 'shell' },
-        h('aside', { className: 'rail' }, h('span', { className: 'wordmark' }, 'Handrail'), h(H.SearchField, { shortcut: '/' }), h(H.DocNav, { sections: nav })),
-        h('main', { className: 'sheet' },
-          h('div', { className: 'stack' },
-            h(H.GovernanceHeader, { section: 'People Ops', title: 'Paid time off', summary: 'How much time off you get, how to ask for it, and who says yes.', owner: 'Dana Whitfield', status: 'approved', reviewed: '12 Sep 2026', nextReview: '12 Mar 2027', version: 'v4.2' }),
-            h('section', { className: 'sec', id: 'allowance' },
-              h('h2', null, 'How much you get'),
-              h('p', null, 'Everyone gets 25 days a year plus public holidays. Your balance resets on 1 January and up to five unused days carry over.'),
-              h(H.Callout, { kind: 'required', title: 'Book at least ten working days ahead' }, h('p', null, 'Requests with less notice go to the account lead, not your manager.'))),
-            h('section', { className: 'sec', id: 'request' },
-              h('h2', null, 'How to ask'),
-              h(H.ProcessSteps, { steps: [
-                { title: 'Send the request in the PTO form', owner: 'Employee', body: 'Pick your dates and add who covers your clients.' },
-                { title: 'Manager reviews coverage', owner: 'Direct manager', current: true, decision: { if: 'it overlaps a client launch', goTo: 'step 3', target: 'esc' } },
-                { id: 'esc', title: 'Escalate to the account lead', owner: 'Account lead', body: 'They decide within two working days.' }
-              ] })))),
+        h('aside', { className: 'navtile' }, h('span', { className: 'wordmark' }, 'Handrail'), h(H.SearchField, { shortcut: '/', placeholder: 'Search' }), h(H.DocNav, { sections: nav })),
+        h('main', { className: 'col' },
+          h(H.GovernanceHeader, { section: 'People Ops', title: 'Paid time off.', summary: [h('span', { key: 1, style: { color: 'var(--ink)' } }, 'How much time off you get,'), ' how to ask for it, and who says yes.'], owner: 'Dana Whitfield', status: 'approved', reviewed: '12 Sep 2026', nextReview: '12 Mar 2027', version: 'v4.2' }),
+          h('div', { className: 'hr-tile' },
+            Sec('allowance', 'Allowance', 'How much you get', [
+              h('p', { key: 1 }, 'Everyone gets 25 days a year plus public holidays. Your balance resets on 1 January and up to five unused days carry over.'),
+              h(H.Callout, { key: 2, kind: 'required', title: 'Book at least ten working days ahead.' }, h('p', null, 'Requests with less notice go to the account lead, not your manager.'))]),
+            Sec('request', 'Process', 'How to ask', h(H.ProcessSteps, { steps: [
+              { title: 'Send the request in the PTO form', owner: 'Employee', body: 'Pick your dates and add who covers your clients.' },
+              { title: 'Manager reviews coverage', owner: 'Direct manager', current: true, decision: { if: 'it overlaps a client launch', goTo: 'step 3', target: 'esc' } },
+              { id: 'esc', title: 'Escalate to the account lead', owner: 'Account lead', body: 'They decide within two working days.' }
+            ] })))),
         h('aside', { className: 'toc' },
-          h('p', { className: 'hr-label' }, 'On this page'),
+          h(H.Eyebrow, { count: 2 }, 'On this page'),
           h('ol', null,
             h('li', null, h('a', { href: '#allowance', className: 'on' }, 'How much you get')),
             h('li', null, h('a', { href: '#request' }, 'How to ask')))))));

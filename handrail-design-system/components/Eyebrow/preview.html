@@ -1,0 +1,14 @@
+<!-- @dsCard group="Content" height=120 -->
+<!doctype html>
+<html lang="en">
+<head><meta charset="utf-8"><title>preview</title></head>
+<body>
+<div id="root" style="padding:20px"></div>
+<script>
+  var H = window.Handrail, h = React.createElement;
+  ReactDOM.createRoot(document.getElementById('root')).render(h('div', { className: 'hr-tile', style: { display: 'grid', gap: '20px', maxWidth: '320px' } },
+    h(H.Eyebrow, null, 'Why this policy exists'),
+    h(H.Eyebrow, { count: 4 }, 'People Ops')));
+</script>
+</body>
+</html>
